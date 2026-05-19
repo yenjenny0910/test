@@ -247,7 +247,8 @@ app.post('/api/ocr', auth, upload.single('file'), async (req, res) => {
         
         const result = await model.generateContent([
             imagePart,
-            'Extract the text from this image and return only the recognized text.'
+            '請分析這張圖片，擷取其中的英文單字。對於每個單字，請提供：1. 英文單字本身、2. 詞性簡寫（如 n., v., adj.）、3. 繁體中文解釋。請忽略任何完整的句子、例句與 KK 音標。請僅回傳一個合法的 JSON 陣列，格式如下，不要包含任何 markdown 標籤（如 ```json）：
+[{"word": "innovation", "pos": "n.", "def": "創新"}]'
         ]);
 
         fs.unlink(imagePath, () => {});
