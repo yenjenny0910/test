@@ -245,11 +245,23 @@ app.post('/api/ocr', auth, upload.single('file'), async (req, res) => {
         const ai = new GoogleGenerativeAI(apiKey);
         const model = ai.getGenerativeModel({ model: modelName });
         
-        const result = await model.generateContent([
-            imagePart,
-            '請分析這張圖片，擷取其中的英文單字。對於每個單字，請提供：1. 英文單字本身、2. 詞性簡寫（如 n., v., adj.）、3. 繁體中文解釋。請忽略任何完整的句子、例句與 KK 音標。請僅回傳一個合法的 JSON 陣列，格式如下，不要包含任何 markdown 標籤（如 ```json）：
-[{"word": "innovation", "pos": "n.", "def": "創新"}]'
-        ]);
+        // 確保最外層是用 ` (反單引號) 包裹提示詞
+const ocrPrompt = `請分析這張圖片，擷取其中的英文單字。
+對於每個單字，請精確提供以下三個欄位：
+1. "word": 英文單字本身
+2. "pos": 詞性簡寫（例如 n., v., adj., adv.）
+3. "def": 繁體中文解釋
+
+⚠️ 注意事項：
+- 請完全忽略任何完整的句子、長句或 KK 音標。
+- 必須「僅」回傳一個合法的 JSON 陣列，格式如下，絕對不要包含任何 Markdown 標籤（例如不要寫 \`\`\`json）：
+[{"word": "innovation", "pos": "n.", "def": "創新"}]`;
+
+// 呼叫官方 SDK (確保括號都有對齊 closure)
+const result = await model.generateContent([
+    imagePart,
+    ocrPrompt
+]);
 
         fs.unlink(imagePath, () => {});
 
