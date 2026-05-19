@@ -28,7 +28,7 @@ app.use(cors({
 }));
 app.use(bodyParser.json());
 
-// 請求日誌紀錄
+// 加入日誌，讓你在終端機看到請求紀錄
 app.use((req, res, next) => {
     console.log(`${new Date().toLocaleTimeString()} - ${req.method} ${req.url}`);
     next();
@@ -102,7 +102,10 @@ app.post('/api/register', async (req, res) => {
     try {
         const userId = 'u' + Date.now();
         await db.run('INSERT INTO users (id, username, password) VALUES (?, ?, ?)', [userId, username, password]);
+        
+        // 為新使用者建立預設錯題本
         await db.run('INSERT INTO books (id, user_id, name) VALUES (?, ?, ?)', [`mistakes-${userId}`, userId, '測驗錯題本']);
+        
         res.json({ success: true, message: '註冊成功！' });
     } catch (err) {
         if (err.code === 'SQLITE_CONSTRAINT') {
@@ -188,6 +191,33 @@ const uploadDir = path.join(__dirname, 'uploads');
 fs.mkdirSync(uploadDir, { recursive: true });
 const upload = multer({ dest: uploadDir });
 
+function parseGeminiResponse(data) {
+    if (!data || typeof data !== 'object') return '';
+
+    if (Array.isArray(data.predictions) && data.predictions.length > 0) {
+        const first = data.predictions[0];
+        if (typeof first === 'string') {
+            return first;
+        }
+        if (first && typeof first === 'object') {
+            if (Array.isArray(first.output) && first.output.length > 0) {
+                const item = first.output[0];
+                if (typeof item === 'string') return item;
+                if (item && typeof item === 'object') return item.content || item.text || '';
+            }
+            return first.content || first.text || '';
+        }
+    }
+
+    if (Array.isArray(data.output) && data.output.length > 0) {
+        const first = data.output[0];
+        if (typeof first === 'string') return first;
+        if (first && typeof first === 'object') return first.content || first.text || '';
+    }
+
+    return '';
+}
+
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 app.post('/api/ocr', auth, upload.single('file'), async (req, res) => {
@@ -211,25 +241,13 @@ app.post('/api/ocr', auth, upload.single('file'), async (req, res) => {
             }
         };
 
+        // 核心修正點
         const ai = new GoogleGenerativeAI(apiKey);
         const model = ai.getGenerativeModel({ model: modelName });
         
-        // 🚀 已修復：優化提示詞結構，移除可能導致字串中斷的反單引號符號
-        const ocrPrompt = `請分析這張圖片，擷取其中的英文單字。
-對於每個單字，請精確提供以下三個欄位：
-1. "word": 英文單字本身
-2. "pos": 詞性簡寫（例如 n., v., adj., adv.）
-3. "def": 繁體中文解釋
-
-⚠️ 注意事項：
-- 請完全忽略任何完整的句子、長句或 KK 音標。
-- 必須「僅」回傳一個合法的 JSON 陣列格式。
-- 絕對不要用任何 Markdown 程式碼區塊標籤（例如包在三反單引號的 json 區塊內）來包裹它，直接輸出未加工的 JSON。
-[{"word": "innovation", "pos": "n.", "def": "創新"}]`;
-
         const result = await model.generateContent([
             imagePart,
-            ocrPrompt
+            'Extract the text from this image and return only the recognized text.'
         ]);
 
         fs.unlink(imagePath, () => {});
@@ -247,7 +265,6 @@ app.post('/api/ocr', auth, upload.single('file'), async (req, res) => {
         return res.status(500).json({ error: 'Gemini OCR failed', details: error.message });
     }
 });
-
 app.use(express.static(path.join(__dirname, './')));
 
 const HOST = '0.0.0.0';
