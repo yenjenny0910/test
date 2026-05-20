@@ -999,3 +999,29 @@ main {
         height: 60px !important;
     }
 }
+
+/* ==========================================================================
+   🎨 13. 熟練度狀態色彩萬用防呆補強 (清空 Class 打架問題)
+   ========================================================================== */
+
+/* 🟢 【熟練 / 記得】的綠色系列 (相容所有可能的名字) */
+.status-mastered, 
+.word-item.status-mastered,
+.flashcard.status-mastered .card-front,
+.flashcard.mastered .card-front,
+.card-face.mastered {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* 🔴 【需複習 / 忘記】的紅色系列 (相容所有可能的名字) */
+.status-review, 
+.word-item.status-review,
+.flashcard.status-review .card-front,
+.flashcard.review .card-front,
+.card-face.review {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.2) !important;
+}
