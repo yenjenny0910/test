@@ -547,7 +547,7 @@ main {
     margin-top: 1rem;
     border-radius: 12px;
     background: rgba(0, 0, 0, 0.2);
-}
+} /* 💡 修正點：這裡補上了原本漏掉的大括號 */
 
 #ocr-preview-rows input {
     min-width: 100px; 
@@ -574,7 +574,7 @@ main {
 
     .grid-container,
     .level-grid,
-    #book-list { /* 修正：精準對齊你的 JS 渲染名稱 */
+    #book-list { 
         grid-template-columns: 1fr !important; 
         gap: 1.25rem;
     }
@@ -586,7 +586,6 @@ main {
         gap: 1rem;
     }
 
-    /* 修正：對齊你畫面頂端的按鈕群組區塊（如：拍照辨識、手動新增） */
     .header-actions, 
     .detail-header div {
         width: 100% !important;
@@ -605,7 +604,7 @@ main {
     }
 
     /* 單字條目卡片化 */
-    #word-list { /* 修正：將 .word-list 改為 #word-list */
+    #word-list { 
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
@@ -619,7 +618,6 @@ main {
         position: relative;
     }
 
-    /* 讓單字本右側的刪除按鈕在手機上好點擊 */
     .word-item .word-actions {
         position: absolute;
         right: 0.75rem;
@@ -640,7 +638,6 @@ main {
         margin-bottom: 1.2rem;
     }
 
-    /* 修正：針對你新版測驗的「輸入框」與「送出按鈕」做手機版放大 */
     #quiz-answer-input {
         width: 100% !important;
         font-size: 1.2rem !important;
@@ -653,14 +650,14 @@ main {
         font-size: 1.1rem !important;
     }
 
-    /* 通用彈窗與相機 (如：OCR 預覽、新增單字彈窗) */
+    /* 通用彈窗與相機 */
     .modal-content, 
     #ocr-preview-modal .modal-content {
         width: 92% !important;                
         padding: 1.25rem !important;
         border-radius: 20px;
         max-height: 85vh;
-        overflow-y: auto; /* 防止表格太長滑不出畫面 */
+        overflow-y: auto; 
     }
 
     .modal-btns {
