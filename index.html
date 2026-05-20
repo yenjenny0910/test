@@ -1438,43 +1438,52 @@ function resetCaptureButton(btn, text) {
         }
 
         function openOcrPreview(words, rawText) {
-            pendingOcrWords = words;
-            const rows = document.getElementById('ocr-preview-rows');
-            const formattedPreview = document.getElementById('ocr-formatted-preview');
-            rows.innerHTML = '';
-            if (formattedPreview) {
-                formattedPreview.textContent = rawText || '';
-            }
+        function openOcrPreview(words, rawText) { // 確保最上面函數名稱跟參數對齊
+    PendingOcrWords = words;
+    const rows = document.getElementById('ocr-preview-rows');
+    const formattedPreview = document.getElementById('ocr-formatted-preview');
+    rows.innerHTML = '';
+    if (formattedPreview) {
+        formattedPreview.textContent = rawText || '';
+    }
 
-            const existing = new Set((books.find(b => b.id === currentBookId)?.words || []).map(w => w.word.toLowerCase()));
-            let added = 0;
+    // 🟢 核心修正 1：改用 == (雙等號) 避免字串與數字型態不同導致找不到單字本
+    const currentBook = books.find(b => b.id == currentBookId);
+    const existing = new Set((currentBook?.words || []).map(w => w.word.toLowerCase()));
+    
+    let added = 0;
 
-            for (const entry of words) {
-                if (!entry.word) continue;
-                if (existing.has(entry.word)) continue;
-                added += 1;
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                        <input type="text" class="ocr-preview-word" value="${entry.word}" style="width:100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main); padding: 0.5rem; border-radius: 12px;" />
-                    </td>
-                    <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                        <input type="text" class="ocr-preview-pos" value="${entry.pos}" style="width:100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main); padding: 0.5rem; border-radius: 12px;" />
-                    </td>
-                    <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                        <input type="text" class="ocr-preview-def" value="${entry.def}" style="width:100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main); padding: 0.5rem; border-radius: 12px;" />
-                    </td>
-                `;
-                rows.appendChild(row);
-            }
+    for (const entry of words) {
+        if (!entry.word) continue;
+        if (existing.has(entry.word.toLowerCase())) continue; // 🟢 修正 2：比對時一律轉小寫防呆
+        added += 1;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                <input type="text" class="ocr-preview-word" value="${entry.word}" style="width:100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main); padding: 0.5rem; border-radius: 12px;" />
+            </td>
+            <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                <input type="text" class="ocr-preview-pos" value="${entry.pos}" style="width:100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main); padding: 0.5rem; border-radius: 12px;" />
+            </td>
+            <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                <input type="text" class="ocr-preview-def" value="${entry.def}" style="width:100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main); padding: 0.5rem; border-radius: 12px;" />
+            </td>
+        `;
+        rows.appendChild(row);
+    }
 
-            if (added === 0) {
-                alert('這張圖片中的單字已經都存在於目前單字本中，或無法解析出有效單字。');
-                return;
-            }
+    if (added === 0) {
+        alert('這張圖片中的單字已經都存在於目前單字本中，或無法解析出有效單字。');
+        return;
+    }
 
-            document.getElementById('ocr-preview-modal').classList.add('active');
-        }
+    // 🟢 核心修正 3：先確保關閉其他無關的 Modal，做到全面防禦
+    document.getElementById('word-modal').classList.remove('active');
+    document.getElementById('book-modal').classList.remove('active');
+
+    // 最後只打開預覽畫面
+    document.getElementById('ocr-preview-modal').classList.add('active');
+}
 
         async function handleImageUpload(event) {
             const file = event.target.files && event.target.files[0];
