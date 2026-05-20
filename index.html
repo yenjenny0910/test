@@ -249,7 +249,7 @@
                 <div class="modal-content" style="max-width: 700px;">
                     <h3>辨識預覽</h3>
                     <p style="color: var(--text-muted); margin-bottom: 1rem;">請確認下方的英文單字、詞性與中文解釋，必要時可手動修改後再匯入。</p>
-                    <div style="margin-bottom: 1rem;">
+                    
                     <div style="max-height: 380px; overflow-y: auto; margin-bottom: 1rem;">
                         <table style="width:100%; border-collapse: collapse; color: var(--text-main);">
                             <thead>
@@ -269,7 +269,6 @@
                 </div>
             </div>
 
-            <!-- Manual Word Modal -->
             <div id="word-modal" class="modal">
                 <div class="modal-content">
                     <h3>手動新增單字</h3>
@@ -291,6 +290,7 @@
                     </div>
                 </div>
             </div>
+
 
             <!-- Custom Book Addition Modal -->
             <div id="book-modal" class="modal">
@@ -1446,12 +1446,12 @@ function resetCaptureButton(btn, text) {
                 formattedPreview.textContent = rawText || '';
             }
 
-            const existing = new Set((books.find(b => b.id == currentBookId)?.words || []).map(w => w.word.toLowerCase()));
+            const existing = new Set((books.find(b => b.id === currentBookId)?.words || []).map(w => w.word.toLowerCase()));
             let added = 0;
 
             for (const entry of words) {
                 if (!entry.word) continue;
-                if (existing.has(entry.word.toLowerCase())) continue;
+                if (existing.has(entry.word)) continue;
                 added += 1;
                 const row = document.createElement('tr');
                 row.innerHTML = `
