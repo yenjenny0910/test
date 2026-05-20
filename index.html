@@ -19,7 +19,7 @@
         <!-- Navigation -->
         <nav class="glass-nav">
             <div class="nav-content">
-                <h1 class="logo">Voca<span>Lens</span></h1>
+                <h1 class="logo">Vaca<span>Lens</span></h1>
                 <div class="nav-actions">
                     <span id="user-info" style="font-weight: 600; color: var(--text-muted); font-size: 0.95rem;"></span>
                     <button id="home-btn" class="icon-btn" title="回首頁">
@@ -95,11 +95,10 @@
                             <h3>建立專屬單字本</h3>
                             <p>透過 AI 照片掃描或手動快速輸入單字</p>
                         </div>
-                        <button id="create-book-btn" class="primary-btn" onclick="document.getElementById('book-modal').classList.add('active');" style="width:100%; padding:1.1rem; font-size:1.05rem; border-radius:16px;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-    新增單字本
+                        <button id="create-book-btn" class="primary-btn" style="width:100%; padding:1.1rem; font-size:1.05rem; border-radius:16px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                            新增單字本
                         </button>
-
                     </div>
                 </div>
 
@@ -131,22 +130,18 @@
                     </button>
                     <h2 id="current-book-name">單字本名稱</h2>
                     <div class="header-actions">
-                        <button id="scan-btn" class="secondary-btn" onclick="event.stopPropagation(); startCamera();">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-    AI 掃描
-</button>
-
-<button id="upload-image-btn" class="secondary-btn" onclick="event.stopPropagation(); document.getElementById('ocr-image-input').click();">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16M8 7v10M16 7v10"/></svg>
-    上傳圖片
-</button>
-
-<button id="add-word-btn" class="secondary-btn" onclick="event.stopPropagation(); document.getElementById('word-modal').classList.add('active');">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-    手動新增
-</button>
-
-
+                        <button id="scan-btn" class="secondary-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                            AI 掃描
+                        </button>
+                        <button id="upload-image-btn" class="secondary-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16M8 7v10M16 7v10"/></svg>
+                            上傳圖片
+                        </button>
+                        <button id="add-word-btn" class="secondary-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                            手動新增
+                        </button>
                         <button id="practice-book-btn" class="secondary-btn" style="background: rgba(139, 92, 246, 0.12); border-color: rgba(139, 92, 246, 0.25); color: var(--primary-light);">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
                             練習 (單字卡)
@@ -174,15 +169,7 @@
                         </div>
                         <h2 id="q-def">中文解釋</h2>
                         <div id="q-pos" style="color: var(--accent); font-weight: 700; margin-bottom: 2rem; font-size: 1.25rem;">[詞性]</div>
-
-                        <button id="quiz-replay-btn" 
-        onclick="if(currentQuiz) speakWord(currentQuiz.words[currentQuiz.currentIndex].word)" 
-        style="padding: 0.5rem 1rem; background-color: #4F46E5; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; margin-top: 0.8rem; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.2s;"
-        onmouseover="this.style.backgroundColor='#4338CA'"
-        onmouseout="this.style.backgroundColor='#4F46E5'">
-    🔊 沒聽清楚？再聽一次
-</button>
-
+                        
                         <div class="input-group quiz-input-group">
                             <input type="text" id="quiz-answer-input" placeholder="請輸入英文單字..." autocomplete="off">
                         </div>
@@ -541,118 +528,87 @@
             });
         }
 
-        // --- Open Custom Vocabulary Book (修正顯示按鈕) ---
-function openBook(bookId) {
-    currentBookId = bookId;
-    currentLevel = null;
-    
-    // 🧠 加上 == 防呆比對
-    const book = books.find(b => b.id == bookId);
-    if (book) {
-        document.getElementById('current-book-name').textContent = book.name;
-        
-        // 🌟 核心修正：進入自訂單字本時，要把所有編輯和上傳按鈕「重新打開顯示」！
-        document.getElementById('scan-btn').style.display = 'flex';
-        document.getElementById('upload-image-btn').style.display = 'flex'; // 👈 補上這行，還原顯示
-        document.getElementById('add-word-btn').style.display = 'flex';
-        
-        renderWordList();
-        navigateTo('bookDetail');
-    }
-        }
-        // --- Open Built-in CEEC Level Preview (修正隱藏與顯示按鈕) ---
-function openLevel(level) {
-    if (typeof level === 'number') {
-        currentLevel = `Level${level}`;
-    } else if (typeof level === 'string') {
-        currentLevel = level.charAt(0).toUpperCase() + level.slice(1);
-    } else {
-        currentLevel = level;
-    }
-    
-    currentBookId = null;
-    
-    document.getElementById('current-book-name').textContent = `7000 單挑戰 - ${currentLevel}`;
-    
-    // 🌟 核心修正：進入 7000 單字級數時，把所有上傳圖片、AI 掃描、手動新增功能「通通隱藏」！
-    document.getElementById('scan-btn').style.display = 'none';
-    document.getElementById('upload-image-btn').style.display = 'none'; // 👈 補上這行，把上傳圖片隱藏
-    document.getElementById('add-word-btn').style.display = 'none';
-    
-    renderWordList();
-    navigateTo('bookDetail');
+        // --- Open Custom Vocabulary Book ---
+        function openBook(bookId) {
+            currentBookId = bookId;
+            currentLevel = null;
+            
+            const book = books.find(b => b.id === bookId);
+            document.getElementById('current-book-name').textContent = book.name;
+            
+            // Show edit buttons since this is a user-defined book
+            document.getElementById('scan-btn').style.display = 'flex';
+            document.getElementById('add-word-btn').style.display = 'flex';
+            
+            renderWordList();
+            navigateTo('bookDetail');
         }
 
-        // 🎵 瀏覽器原生發音功能（美式英語）
-function speakWord(word) {
-    if ('speechSynthesis' in window) {
-        // 先停止前面可能還在播放的聲音，避免連續點擊時聲音重疊
-        window.speechSynthesis.cancel(); 
-        
-        const utterance = new SpeechSynthesisUtterance(word);
-        utterance.lang = 'en-US'; // 🇺🇸 設定美式英語
-        utterance.rate = 0.9;     // 語速稍微放慢一點點（0.1 ~ 10，1.0 為正常速度）
-        window.speechSynthesis.speak(utterance);
-    } else {
-        alert('您的瀏覽器不支援語音合成功能 😢');
-    }
-}
-
-// --- Render Word List (With Mastery Color Status & Audio Pronunciation) ---
-function renderWordList() {
-    let words = [];
-    if (currentBookId) {
-        const book = books.find(b => b.id === currentBookId);
-        words = book ? book.words : [];
-    } else if (currentLevel) {
-        words = CEEC_WORDS[currentLevel] || [];
-    }
-    
-    const list = document.getElementById('word-list');
-    list.innerHTML = '';
-    
-    if (words.length === 0) {
-        list.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin-top:2rem;">目前沒有單字，快點新增吧！</p>';
-        return;
-    }
-
-    words.forEach((item, index) => {
-        const div = document.createElement('div');
-        const status = masteryData[item.word] || '';
-        div.className = `word-item ${status ? 'status-' + status : ''}`;
-        
-        // 🌟 核心修正：在 h4 內加上一個小喇叭按鈕，並加上 event.stopPropagation() 防誤觸
-        div.innerHTML = `
-            <div class="word-info">
-                <h4 style="display: flex; align-items: center; gap: 0.6rem;">
-                    ${item.word}
-                    <button class="speak-btn" onclick="event.stopPropagation(); speakWord('${item.word}')" style="background:none; border:none; cursor:pointer; font-size:1.1rem; padding:0; line-height:1; opacity:0.7; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7;">🔊</button>
-                </h4>
-                <p>
-                    ${item.pos ? `<span style="color:var(--primary-light); font-weight:600; margin-right:0.6rem;">${item.pos}</span>` : ''}
-                    ${item.def}
-                </p>
-            </div>
-            <div class="word-actions">
-                ${!currentLevel ? `
-                <button class="icon-btn delete-word" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                </button>
-                ` : ''}
-            </div>
-        `;
-        
-        if (!currentLevel) {
-            div.querySelector('.delete-word').onclick = (e) => {
-                e.stopPropagation();
-                deleteWord(item.id, index);
-            };
+        // --- Open Built-in CEEC Level Preview ---
+        function openLevel(level) {
+            currentLevel = level;
+            currentBookId = null;
+            
+            document.getElementById('current-book-name').textContent = `7000 單挑戰 - Level ${level}`;
+            
+            // Hide edit buttons since built-in levels are read-only
+            document.getElementById('scan-btn').style.display = 'none';
+            document.getElementById('add-word-btn').style.display = 'none';
+            
+            renderWordList();
+            navigateTo('bookDetail');
         }
-        
-        list.appendChild(div);
-    });
-}
 
+        // --- Render Word List (With Mastery Color Status) ---
+        function renderWordList() {
+            let words = [];
+            if (currentBookId) {
+                const book = books.find(b => b.id === currentBookId);
+                words = book ? book.words : [];
+            } else if (currentLevel) {
+                words = CEEC_WORDS[currentLevel] || [];
+            }
+            
+            const list = document.getElementById('word-list');
+            list.innerHTML = '';
+            
+            if (words.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin-top:2rem;">目前沒有單字，快點新增吧！</p>';
+                return;
+            }
+
+            words.forEach((item, index) => {
+                const div = document.createElement('div');
+                const status = masteryData[item.word] || '';
+                div.className = `word-item ${status ? 'status-' + status : ''}`;
+                
+                div.innerHTML = `
+                    <div class="word-info">
+                        <h4>${item.word}</h4>
+                        <p>
+                            ${item.pos ? `<span style="color:var(--primary-light); font-weight:600; margin-right:0.6rem;">${item.pos}</span>` : ''}
+                            ${item.def}
+                        </p>
+                    </div>
+                    <div class="word-actions">
+                        ${!currentLevel ? `
+                        <button class="icon-btn delete-word" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
+                        ` : ''}
+                    </div>
+                `;
+                
+                if (!currentLevel) {
+                    div.querySelector('.delete-word').onclick = (e) => {
+                        e.stopPropagation();
+                        deleteWord(item.id, index);
+                    };
+                }
+                
+                list.appendChild(div);
+            });
+        }
 
         // --- Delete Custom Word ---
         async function deleteWord(wordId, index) {
@@ -702,39 +658,35 @@ function renderWordList() {
             showQuestion();
         }
 
-        // --- Show Quiz Question (與自動語音發音結合) ---
-function showQuestion() {
-    const q = currentQuiz.words[currentQuiz.currentIndex];
-    const total = currentQuiz.words.length;
-    
-    document.getElementById('progress-bar').style.width = `${(currentQuiz.currentIndex / total) * 100}%`;
-    document.getElementById('q-count').textContent = `${currentQuiz.currentIndex + 1} / ${total}`;
-    document.getElementById('q-category').textContent = currentQuiz.level;
-    
-    // Show Chinese explanation and POS
-    document.getElementById('q-def').textContent = q.def;
-    document.getElementById('q-pos').textContent = q.pos ? `(${q.pos})` : '';
+        // --- Show Quiz Question ---
+        function showQuestion() {
+            const q = currentQuiz.words[currentQuiz.currentIndex];
+            const total = currentQuiz.words.length;
+            
+            document.getElementById('progress-bar').style.width = `${(currentQuiz.currentIndex / total) * 100}%`;
+            document.getElementById('q-count').textContent = `${currentQuiz.currentIndex + 1} / ${total}`;
+            document.getElementById('q-category').textContent = currentQuiz.level;
+            
+            // Show Chinese explanation and POS
+            document.getElementById('q-def').textContent = q.def;
+            document.getElementById('q-pos').textContent = q.pos ? `(${q.pos})` : '';
 
-    // Reset input field
-    const input = document.getElementById('quiz-answer-input');
-    input.value = '';
-    input.disabled = false;
-    input.focus();
+            // Reset input field
+            const input = document.getElementById('quiz-answer-input');
+            input.value = '';
+            input.disabled = false;
+            input.focus();
 
-    // Reset submit button
-    const submitBtn = document.getElementById('submit-answer-btn');
-    submitBtn.disabled = false;
-    submitBtn.textContent = '送出答案';
+            // Reset submit button
+            const submitBtn = document.getElementById('submit-answer-btn');
+            submitBtn.disabled = false;
+            submitBtn.textContent = '送出答案';
 
-    // Reset feedback
-    const feedback = document.getElementById('quiz-feedback');
-    feedback.style.display = 'none';
-    feedback.textContent = '';
-
-    // 🌟 【核心功能】題目一顯示，立刻自動唸出這個單字的英文發音！
-    speakWord(q.word);
-}
-
+            // Reset feedback
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.style.display = 'none';
+            feedback.textContent = '';
+        }
 
         // --- Quiz Answer Smart Match Evaluator ---
         function checkAnswerCorrect(userAns, correctAns) {
@@ -1438,52 +1390,43 @@ function resetCaptureButton(btn, text) {
         }
 
         function openOcrPreview(words, rawText) {
-        function openOcrPreview(words, rawText) { // 確保最上面函數名稱跟參數對齊
-    PendingOcrWords = words;
-    const rows = document.getElementById('ocr-preview-rows');
-    const formattedPreview = document.getElementById('ocr-formatted-preview');
-    rows.innerHTML = '';
-    if (formattedPreview) {
-        formattedPreview.textContent = rawText || '';
-    }
+            pendingOcrWords = words;
+            const rows = document.getElementById('ocr-preview-rows');
+            const formattedPreview = document.getElementById('ocr-formatted-preview');
+            rows.innerHTML = '';
+            if (formattedPreview) {
+                formattedPreview.textContent = rawText || '';
+            }
 
-    // 🟢 核心修正 1：改用 == (雙等號) 避免字串與數字型態不同導致找不到單字本
-    const currentBook = books.find(b => b.id == currentBookId);
-    const existing = new Set((currentBook?.words || []).map(w => w.word.toLowerCase()));
-    
-    let added = 0;
+            const existing = new Set((books.find(b => b.id === currentBookId)?.words || []).map(w => w.word.toLowerCase()));
+            let added = 0;
 
-    for (const entry of words) {
-        if (!entry.word) continue;
-        if (existing.has(entry.word.toLowerCase())) continue; // 🟢 修正 2：比對時一律轉小寫防呆
-        added += 1;
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                <input type="text" class="ocr-preview-word" value="${entry.word}" style="width:100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main); padding: 0.5rem; border-radius: 12px;" />
-            </td>
-            <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                <input type="text" class="ocr-preview-pos" value="${entry.pos}" style="width:100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main); padding: 0.5rem; border-radius: 12px;" />
-            </td>
-            <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                <input type="text" class="ocr-preview-def" value="${entry.def}" style="width:100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main); padding: 0.5rem; border-radius: 12px;" />
-            </td>
-        `;
-        rows.appendChild(row);
-    }
+            for (const entry of words) {
+                if (!entry.word) continue;
+                if (existing.has(entry.word)) continue;
+                added += 1;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        <input type="text" class="ocr-preview-word" value="${entry.word}" style="width:100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main); padding: 0.5rem; border-radius: 12px;" />
+                    </td>
+                    <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        <input type="text" class="ocr-preview-pos" value="${entry.pos}" style="width:100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main); padding: 0.5rem; border-radius: 12px;" />
+                    </td>
+                    <td style="padding: 0.75rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        <input type="text" class="ocr-preview-def" value="${entry.def}" style="width:100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main); padding: 0.5rem; border-radius: 12px;" />
+                    </td>
+                `;
+                rows.appendChild(row);
+            }
 
-    if (added === 0) {
-        alert('這張圖片中的單字已經都存在於目前單字本中，或無法解析出有效單字。');
-        return;
-    }
+            if (added === 0) {
+                alert('這張圖片中的單字已經都存在於目前單字本中，或無法解析出有效單字。');
+                return;
+            }
 
-    // 🟢 核心修正 3：先確保關閉其他無關的 Modal，做到全面防禦
-    document.getElementById('word-modal').classList.remove('active');
-    document.getElementById('book-modal').classList.remove('active');
-
-    // 最後只打開預覽畫面
-    document.getElementById('ocr-preview-modal').classList.add('active');
-}
+            document.getElementById('ocr-preview-modal').classList.add('active');
+        }
 
         async function handleImageUpload(event) {
             const file = event.target.files && event.target.files[0];
@@ -1601,6 +1544,8 @@ function resetCaptureButton(btn, text) {
         document.getElementById('confirm-ocr-import').onclick = confirmOcrImport;
 
         // Camera event triggers
+        document.getElementById('scan-btn').onclick = startCamera;
+        document.getElementById('upload-image-btn').onclick = () => document.getElementById('ocr-image-input').click();
         document.getElementById('close-camera').onclick = stopCamera;
         document.getElementById('capture-btn').onclick = captureAndScan;
 
@@ -1608,8 +1553,9 @@ function resetCaptureButton(btn, text) {
         document.getElementById('next-month-btn').onclick = () => changeCalendarMonth(1);
 
         document.getElementById('ocr-image-input').onchange = handleImageUpload;
+
         // --- Start App ---
         initApp();
     </script>
 </body>
-                                     </html>
+    </html>
