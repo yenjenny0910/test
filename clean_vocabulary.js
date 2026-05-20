@@ -45,7 +45,7 @@ function parseCleanedLine(line) {
 
     if (posMatches.length > 0) {
         let rawWord = line.slice(0, posMatches[0].index).trim();
-        // 核心改動：利用 Regex 拔除單字尾端純粹用來識別重複的數字（例如 "pop1" -> "pop"）
+        // 拔除單字尾端純粹用來識別重複的數字（例如 "pop1" -> "pop"）
         let word = rawWord.replace(/([a-zA-Z\s\-'\.\/]+)\d+$/, '$1').trim();
 
         for (let i = 0; i < posMatches.length; i++) {
@@ -67,7 +67,7 @@ function parseCleanedLine(line) {
             }
         }
     } else {
-        // 處理沒有詞性標記的特殊行或漏網之魚
+        // 處理沒有詞性標記的特殊行
         const match = line.match(/^([a-zA-Z\s\-'\.\d]+)([\u4e00-\u9fff].*)$/);
         if (match) {
             let rawWord = match[1].trim();
@@ -84,11 +84,8 @@ function parseCleanedLine(line) {
  * 主程式：讀取根目錄 Level1~6.txt，進行自動清洗與智慧合併
  */
 function main() {
-    // 🟢 關鍵修正：baseDir 直接指向當前 js 所在的根目錄，不再進入 data 資料夾
     const baseDir = __dirname; 
     const allLevels = {};
-    
-    // 用於智慧合併重複單字的 Map (Key 為英文單字本身)
     const globalMergedMap = new Map();
 
     console.log("🚀 開始執行大考 7000 單字自動清洗中心...");
@@ -97,7 +94,6 @@ function main() {
         const fileName = `Level${level}.txt`;
         const filePath = path.join(baseDir, fileName);
 
-        // 防呆：如果雲端遺漏了某個 Level 檔案，印出警告但不崩潰
         if (!fs.existsSync(filePath)) {
             console.error(`❌ 錯誤: 在根目錄找不到檔案 ${fileName}，跳過此級數！`);
             continue;
@@ -107,13 +103,11 @@ function main() {
         const content = fs.readFileSync(filePath, 'utf8');
         const lines = content.split(/\r?\n/);
 
-        // 預處理：清洗線條並處理換行造成的斷詞
         let cleanedLines = lines.map(line => cleanLine(line)).filter(line => line.length > 0);
         let mergedLines = [];
         
         for (let i = 0; i < cleanedLines.length; i++) {
             let currentLine = cleanedLines[i];
-            // 如果某一行不含任何中文，且下一行存在，則視為未完結的英文片語進行合併
             while (i < cleanedLines.length - 1 && !/[\u4e00-\u9fff]/.test(currentLine)) {
                 i++;
                 currentLine += " " + cleanedLines[i];
@@ -125,7 +119,6 @@ function main() {
         let currentWord = null;
         const posList = ['prep.', 'conj.', 'pron.', 'aux.', 'adj.', 'adv.', 'num.', 'int.', 'art.', 'vi.', 'vt.', 'n.', 'v.', 'a.', 'ad.'];
 
-        // 逐行解析單字
         for (let i = 0; i < mergedLines.length; i++) {
             const line = mergedLines[i];
             
@@ -150,7 +143,6 @@ function main() {
                     }
                 }
 
-                // 處理多行定義延伸
                 if (isContinuation && currentWord) {
                     if (posFound) {
                         const newDef = line.slice(posFound.length).trim();
@@ -176,27 +168,20 @@ function main() {
                     currentWord = structuredWords[structuredWords.length - 1];
                 }
             } catch (lineError) {
-                // 🚨 行解析防撞機制：某行出錯僅跳過並提示，確保整個部署不崩潰
                 console.warn(`⚠️ 警告: 解析此行時發生錯誤並跳過 -> "${line}":`, lineError.message);
             }
         }
 
-        // 🧠 【核心智慧合併機制】將重複出現、去完數字後的單字完美融合
         structuredWords.forEach(item => {
             const lowerWord = item.word.toLowerCase();
             
             if (globalMergedMap.has(lowerWord)) {
-                // 發現重複單字（如之前的 pop1 與 pop2）
                 let existing = globalMergedMap.get(lowerWord);
-                
-                // 合併詞性（避免重複寫入相同的詞性）
                 if (!existing.pos.includes(item.pos)) {
                     existing.pos = `${existing.pos}, ${item.pos}`;
                 }
-                // 用「 ； 」做為前端分割的安全符號，並帶上詞性標記
                 existing.def = `${existing.def} ； (${item.pos}) ${item.def}`;
             } else {
-                // 第一次遇到的單字，先格式化定義外觀
                 let formattedItem = {
                     word: item.word,
                     pos: item.pos,
@@ -206,21 +191,34 @@ function main() {
             }
         });
 
-        // 將此 Level 合併後的所有單字轉回陣列存檔
+        // 暫存至暫存區
         allLevels[`level${level}`] = Array.from(globalMergedMap.values());
-        // 清空 Map 讓下一個 Level 重新計算（或若要跨 Level 合併可不予清空，此處採各 Level 獨立）
         globalMergedMap.clear();
         console.log(`✅ ${fileName} 解析完畢，共計 ${allLevels[`level${level}`].length} 個不重複單字。`);
     }
 
-    // 轉化為前端網頁可以直接透過 <script> 標籤載入的 Global 變數格式
-    const outputContent = `// 🤖 本檔案由雲端 Docker 自動清洗生成，請勿手動修改\nconst ceec_words = ${JSON.stringify(allLevels, null, 2)};\n\nif (typeof module !== 'undefined' && module.exports) {\n  module.exports = ceec_words;\n}`;
+    // =========================================================================
+    // 🌟 ✨ ✨ 【前端對接優化區】把格式塑造成前端大寫 CEEC_WORDS 的形狀 ✨ ✨ ✨
+    // =========================================================================
+    const formattedLevels = {};
+    for (let i = 1; i <= 6; i++) {
+        // 將原本小寫的 level1 轉換為大寫開頭的 Level1，完美迎合前端需求
+        formattedLevels[`Level${i}`] = allLevels[`level${i}`] || [];
+    }
 
-    // 🟢 關鍵修正：將生成的 ceec_words.js 直接寫在根目錄下，方便 Dockerfile 拾取
+    // 輸出內容：直接宣告大寫的 CEEC_WORDS，並附帶一個小寫的 ceec_words 做雙向防呆
+    const outputContent = `// 🤖 本檔案由雲端 Docker 自動清洗生成，請勿手動修改
+const CEEC_WORDS = ${JSON.stringify(formattedLevels, null, 2)};
+const ceec_words = CEEC_WORDS; 
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = CEEC_WORDS;
+}`;
+
     const outputFilePath = path.join(baseDir, 'ceec_words.js');
     fs.writeFileSync(outputFilePath, outputContent, 'utf8');
     
-    console.log(`\n✨✨✨ 恭喜！全自動資料庫清洗完畢！✨✨✨`);
+    console.log(`\n✨✨✨ 恭喜！大寫相容版資料庫清洗完畢！✨✨✨`);
     console.log(`📝 已成功在根目錄輸出全新結構檔：${outputFilePath}\n`);
 }
 
