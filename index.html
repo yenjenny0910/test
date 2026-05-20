@@ -545,19 +545,29 @@
         }
 
         // --- Open Built-in CEEC Level Preview ---
-        function openLevel(level) {
-            currentLevel = level;
-            currentBookId = null;
-            
-            document.getElementById('current-book-name').textContent = `7000 單挑戰 - Level ${level}`;
-            
-            // Hide edit buttons since built-in levels are read-only
-            document.getElementById('scan-btn').style.display = 'none';
-            document.getElementById('add-word-btn').style.display = 'none';
-            
-            renderWordList();
-            navigateTo('bookDetail');
-        }
+function openLevel(level) {
+    // 🧠 萬用防呆：不管傳進來的是什麼，一律轉成大寫開頭的 "LevelX"
+    if (typeof level === 'number') {
+        currentLevel = `Level${level}`;
+    } else if (typeof level === 'string') {
+        // 把可能傳進來的 "level2" 變成 "Level2"
+        currentLevel = level.charAt(0).toUpperCase() + level.slice(1);
+    } else {
+        currentLevel = level;
+    }
+    
+    currentBookId = null;
+    
+    document.getElementById('current-book-name').textContent = `7000 單挑戰 - ${currentLevel}`;
+    
+    // Hide edit buttons since built-in levels are read-only
+    document.getElementById('scan-btn').style.display = 'none';
+    document.getElementById('add-word-btn').style.display = 'none';
+    
+    renderWordList();
+    navigateTo('bookDetail');
+}
+
 
         // --- Render Word List (With Mastery Color Status) ---
         function renderWordList() {
