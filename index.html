@@ -2451,7 +2451,6 @@ async function confirmAndSave() {
                     // 先把文字前後可能不小心夾帶的 ```json 標籤去掉（防呆）
                     const cleanJsonToken = data.text.replace(/```json|```/g, '').trim();
                     entries = JSON.parse(cleanJsonToken);
-                    displayRawText = data.text; // 留作備用顯示
                 } else if (Array.isArray(data.text)) {
                     entries = data.text;
                 } else if (Array.isArray(data)) {
@@ -2533,18 +2532,5 @@ async function confirmAndSave() {
         // --- Start App ---
         initApp();
     </script>
-    <div id="preview-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center;">
-    <div style="background: white; padding: 25px; border-radius: 12px; max-width: 550px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-        <h3 style="margin-top: 0; color: #333; display: flex; align-items: center; gap: 8px;">🔍 AI 辨識結果預覽</h3>
-        <p style="font-size: 13px; color: #666; margin-bottom: 20px;">您可以在匯入前直接修改欄位內容，或刪除不需要的項目。</p>
-        
-        <div id="preview-list-container"></div>
-        
-        <div style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 12px;">
-            <button onclick="closePreviewModal()" style="background: #e0e0e0; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #555;">取消</button>
-            <button onclick="confirmAndSave()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(76,175,80,0.2);">確認加入單字庫</button>
-        </div>
-    </div>
-    </div>
 </body>
 </html>
