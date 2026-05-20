@@ -1446,12 +1446,12 @@ function resetCaptureButton(btn, text) {
                 formattedPreview.textContent = rawText || '';
             }
 
-            const existing = new Set((books.find(b => b.id === currentBookId)?.words || []).map(w => w.word.toLowerCase()));
+            const existing = new Set((books.find(b => b.id == currentBookId)?.words || []).map(w => w.word.toLowerCase()));
             let added = 0;
 
             for (const entry of words) {
                 if (!entry.word) continue;
-                if (existing.has(entry.word)) continue;
+                if (existing.has(entry.word.toLowerCase())) continue;
                 added += 1;
                 const row = document.createElement('tr');
                 row.innerHTML = `
