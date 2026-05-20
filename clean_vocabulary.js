@@ -170,55 +170,62 @@ function processFile(filePath) {
     const structuredWords = [];
     let currentWord = null;
 
+        // === 尋找這段並用 Try-Catch 包裹 ===
     for (let i = 0; i < mergedLines.length; i++) {
         const line = mergedLines[i];
         if (!line) continue;
 
-        let isContinuation = false;
-        let posFound = null;
+        try {
+            let isContinuation = false;
+            let posFound = null;
 
-        for (const pos of posList) {
-            const regex = new RegExp(`^${pos.replace('.', '\\.')}(?:[^a-zA-Z]|$)`);
-            const match = line.match(regex);
-            if (match) {
-                posFound = pos;
-                isContinuation = true;
-                break;
-            }
-        }
-
-        if (!isContinuation && currentWord) {
-            const hasEnglishLetters = /[a-zA-Z]{2,}/.test(line);
-            if (!hasEnglishLetters) {
-                isContinuation = true;
-            }
-        }
-
-        if (isContinuation && currentWord) {
-            if (posFound) {
-                const newDef = line.slice(posFound.length).trim();
-                let standardPos = posFound;
-                if (standardPos === 'a.') standardPos = 'adj.';
-                else if (standardPos === 'ad.') standardPos = 'adv.';
-
-                if (!currentWord.pos.includes(standardPos)) {
-                    currentWord.pos = currentWord.pos ? `${currentWord.pos}, ${standardPos}` : standardPos;
+            for (const pos of posList) {
+                const regex = new RegExp(`^${pos.replace('.', '\\.')}(?:[^a-zA-Z]|$)`);
+                const match = line.match(regex);
+                if (match) {
+                    posFound = pos;
+                    isContinuation = true;
+                    break;
                 }
-                currentWord.def = currentWord.def ? `${currentWord.def}；${newDef}` : newDef;
-            } else {
-                currentWord.def = currentWord.def ? `${currentWord.def}；${line}` : line;
             }
-            continue;
-        }
 
-        const parsedList = parseCleanedLine(line);
-        if (parsedList.length > 0) {
-            parsedList.forEach(w => {
-                structuredWords.push(w);
-            });
-            currentWord = structuredWords[structuredWords.length - 1];
+            if (!isContinuation && currentWord) {
+                const hasEnglishLetters = /[a-zA-Z]{2,}/.test(line);
+                if (!hasEnglishLetters) {
+                    isContinuation = true;
+                }
+            }
+
+            if (isContinuation && currentWord) {
+                if (posFound) {
+                    const newDef = line.slice(posFound.length).trim();
+                    let standardPos = posFound;
+                    if (standardPos === 'a.') standardPos = 'adj.';
+                    else if (standardPos === 'ad.') standardPos = 'adv.';
+
+                    if (!currentWord.pos.includes(standardPos)) {
+                        currentWord.pos = currentWord.pos ? `${currentWord.pos}, ${standardPos}` : standardPos;
+                    }
+                    currentWord.def = currentWord.def ? `${currentWord.def}；${newDef}` : newDef;
+                } else {
+                    currentWord.def = currentWord.def ? `${currentWord.def}；${line}` : line;
+                }
+                continue;
+            }
+
+            const parsedList = parseCleanedLine(line);
+            if (parsedList.length > 0) {
+                parsedList.forEach(w => {
+                    structuredWords.push(w);
+                });
+                currentWord = structuredWords[structuredWords.length - 1];
+            }
+        } catch (wordError) {
+            // 🚨 如果這行單字解析失敗，印出警告，但「不要崩潰」，繼續解析下一個單字！
+            console.warn(`⚠️ 警告: 解析此行單字時跳過，格式可能混亂 -> "${line}":`, wordError.message);
         }
     }
+
 
     // Post-cleaning step
     structuredWords.forEach(item => {
