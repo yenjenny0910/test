@@ -95,7 +95,7 @@
                             <h3>建立專屬單字本</h3>
                             <p>透過 AI 照片掃描或手動快速輸入單字</p>
                         </div>
-                        <button id="create-book-btn" class="primary-btn" onclick="createNewBook()" style="width:100%; padding:1.1rem; font-size:1.05rem; border-radius:16px;">
+                        <button id="create-book-btn" class="primary-btn" onclick="document.getElementById('book-modal').classList.add('active')" style="width:100%; padding:1.1rem; font-size:1.05rem; border-radius:16px;">
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
     新增單字本
 </button>
@@ -139,10 +139,11 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16M8 7v10M16 7v10"/></svg>
                             上傳圖片
                         </button>
-                        <button id="add-word-btn" class="secondary-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                            手動新增
-                        </button>
+                        <button id="add-word-btn" class="secondary-btn" onclick="document.getElementById('word-modal').classList.add('active')">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+    手動新增
+</button>
+
                         <button id="practice-book-btn" class="secondary-btn" style="background: rgba(139, 92, 246, 0.12); border-color: rgba(139, 92, 246, 0.25); color: var(--primary-light);">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
                             練習 (單字卡)
@@ -537,31 +538,27 @@
             });
         }
 
-        // --- Open Custom Vocabulary Book (自訂書本專用) ---
+        // --- Open Custom Vocabulary Book (修正顯示按鈕) ---
 function openBook(bookId) {
     currentBookId = bookId;
-    currentLevel = null; // 清空內建 Level
+    currentLevel = null;
     
-    // 🧠 關鍵：用 == 寬鬆比對，解決型態問題
+    // 🧠 加上 == 防呆比對
     const book = books.find(b => b.id == bookId);
-    
     if (book) {
         document.getElementById('current-book-name').textContent = book.name;
         
-        // 自訂書本要顯示編輯按鈕
+        // 🌟 核心修正：進入自訂單字本時，要把所有編輯和上傳按鈕「重新打開顯示」！
         document.getElementById('scan-btn').style.display = 'flex';
+        document.getElementById('upload-image-btn').style.display = 'flex'; // 👈 補上這行，還原顯示
         document.getElementById('add-word-btn').style.display = 'flex';
         
         renderWordList();
         navigateTo('bookDetail');
-    } else {
-        console.error(`找不到 ID 為 ${bookId} 的字卡本！`);
     }
-}
-
-
-        // --- Open Built-in CEEC Level Preview ---
-        function openLevel(level) {
+        }
+        // --- Open Built-in CEEC Level Preview (修正隱藏與顯示按鈕) ---
+function openLevel(level) {
     if (typeof level === 'number') {
         currentLevel = `Level${level}`;
     } else if (typeof level === 'string') {
@@ -570,20 +567,18 @@ function openBook(bookId) {
         currentLevel = level;
     }
     
-    currentBookId = null; // 🌟 確保切換到內建 Level 時，自訂書本被清空
-    // ... 後續不變 ...
-
+    currentBookId = null;
     
     document.getElementById('current-book-name').textContent = `7000 單挑戰 - ${currentLevel}`;
     
-    // Hide edit buttons since built-in levels are read-only
+    // 🌟 核心修正：進入 7000 單字級數時，把所有上傳圖片、AI 掃描、手動新增功能「通通隱藏」！
     document.getElementById('scan-btn').style.display = 'none';
+    document.getElementById('upload-image-btn').style.display = 'none'; // 👈 補上這行，把上傳圖片隱藏
     document.getElementById('add-word-btn').style.display = 'none';
     
     renderWordList();
     navigateTo('bookDetail');
-}
-
+        }
 
         // 🎵 瀏覽器原生發音功能（美式英語）
 function speakWord(word) {
@@ -604,7 +599,7 @@ function speakWord(word) {
 function renderWordList() {
     let words = [];
     if (currentBookId) {
-        const book = books.find(b => b.id == currentBookId);
+        const book = books.find(b => b.id === currentBookId);
         words = book ? book.words : [];
     } else if (currentLevel) {
         words = CEEC_WORDS[currentLevel] || [];
@@ -1606,35 +1601,6 @@ function resetCaptureButton(btn, text) {
 
         // --- Start App ---
         initApp();
-        // ➕ 【全新創立】手動新增單字本的靈魂函數
-async function createNewBook() {
-    // 1. 跳出輸入視窗讓使用者輸入名稱
-    const bookName = prompt('📝 請輸入新單字本的名稱：');
-    
-    // 防呆：如果點取消、沒輸入、或只輸入空格，就直接結束不執行
-    if (!bookName || !bookName.trim()) return; 
-
-    try {
-        // 2. 發送 POST 請求給後端 API 建立新單字本
-        // （這裡使用的 apiPost 是你專案內建的非同步請求工具）
-        const newBook = await apiPost('/api/books', { name: bookName.trim() });
-        
-        // 3. 把後端回傳的新單字本，塞進前端的全域資料庫陣列裡
-        if (typeof books !== 'undefined' && Array.isArray(books)) {
-            books.push(newBook);
-        }
-
-        // 4. 重新呼叫你原本的重新讀取與渲染畫面函數
-        if (typeof loadData === 'function') await loadData();
-        if (typeof renderBookList === 'function') renderBookList();
-        
-        alert(`🎉 成功建立單字本：${bookName.trim()}`);
-    } catch (error) {
-        console.error('建立單字本失敗:', error);
-        alert('😢 建立單字本失敗，請檢查後端伺服器連線狀態。');
-    }
-}
-
     </script>
 </body>
-</html>
+                                     </html>
