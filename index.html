@@ -95,10 +95,11 @@
                             <h3>建立專屬單字本</h3>
                             <p>透過 AI 照片掃描或手動快速輸入單字</p>
                         </div>
-                        <button id="create-book-btn" class="primary-btn" style="width:100%; padding:1.1rem; font-size:1.05rem; border-radius:16px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                            新增單字本
-                        </button>
+                        <button id="create-book-btn" class="primary-btn" onclick="createNewBook()" style="width:100%; padding:1.1rem; font-size:1.05rem; border-radius:16px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+    新增單字本
+</button>
+
                     </div>
                 </div>
 
@@ -536,18 +537,18 @@
             });
         }
 
-        // --- Open Custom Vocabulary Book (防呆修正版) ---
+        // --- Open Custom Vocabulary Book (自訂書本專用) ---
 function openBook(bookId) {
     currentBookId = bookId;
-    currentLevel = null; // 🌟 確保切換到自訂書本時，內建 Level 被清空
+    currentLevel = null; // 清空內建 Level
     
-    // 🧠 防呆：不論是數字還是字串 id，用 == 進行寬鬆比對
+    // 🧠 關鍵：用 == 寬鬆比對，解決型態問題
     const book = books.find(b => b.id == bookId);
     
     if (book) {
         document.getElementById('current-book-name').textContent = book.name;
         
-        // Show edit buttons since this is a user-defined book
+        // 自訂書本要顯示編輯按鈕
         document.getElementById('scan-btn').style.display = 'flex';
         document.getElementById('add-word-btn').style.display = 'flex';
         
@@ -555,11 +556,11 @@ function openBook(bookId) {
         navigateTo('bookDetail');
     } else {
         console.error(`找不到 ID 為 ${bookId} 的字卡本！`);
-        alert('書本讀取失敗，請重新整理網頁 😢');
     }
 }
 
 
+        // --- Open Built-in CEEC Level Preview ---
         function openLevel(level) {
     if (typeof level === 'number') {
         currentLevel = `Level${level}`;
@@ -603,7 +604,7 @@ function speakWord(word) {
 function renderWordList() {
     let words = [];
     if (currentBookId) {
-        const book = books.find(b => b.id === currentBookId);
+        const book = books.find(b => b.id == currentBookId);
         words = book ? book.words : [];
     } else if (currentLevel) {
         words = CEEC_WORDS[currentLevel] || [];
@@ -1605,6 +1606,35 @@ function resetCaptureButton(btn, text) {
 
         // --- Start App ---
         initApp();
+        // ➕ 【全新創立】手動新增單字本的靈魂函數
+async function createNewBook() {
+    // 1. 跳出輸入視窗讓使用者輸入名稱
+    const bookName = prompt('📝 請輸入新單字本的名稱：');
+    
+    // 防呆：如果點取消、沒輸入、或只輸入空格，就直接結束不執行
+    if (!bookName || !bookName.trim()) return; 
+
+    try {
+        // 2. 發送 POST 請求給後端 API 建立新單字本
+        // （這裡使用的 apiPost 是你專案內建的非同步請求工具）
+        const newBook = await apiPost('/api/books', { name: bookName.trim() });
+        
+        // 3. 把後端回傳的新單字本，塞進前端的全域資料庫陣列裡
+        if (typeof books !== 'undefined' && Array.isArray(books)) {
+            books.push(newBook);
+        }
+
+        // 4. 重新呼叫你原本的重新讀取與渲染畫面函數
+        if (typeof loadData === 'function') await loadData();
+        if (typeof renderBookList === 'function') renderBookList();
+        
+        alert(`🎉 成功建立單字本：${bookName.trim()}`);
+    } catch (error) {
+        console.error('建立單字本失敗:', error);
+        alert('😢 建立單字本失敗，請檢查後端伺服器連線狀態。');
+    }
+}
+
     </script>
 </body>
 </html>
