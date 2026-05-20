@@ -522,26 +522,129 @@ main {
 }
 
 @media (max-width: 768px) {
-    .grid-container {
-        grid-template-columns: 1fr;
-    }
-    .hero h2 {
-        font-size: 2rem;
-    }
-    .header-actions {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: var(--bg-dark);
-        padding: 1rem;
-        justify-content: center;
-        border-top: 1px solid var(--glass-border);
-    }
+/* ==========================================================================
+   📱 全畫面 RWD 跨平台優化 (首頁、單字本、測驗、彈出視窗完整修正)
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* ------ 1. 整體基礎排版縮減 ------ */
     main {
-        padding-bottom: 80px;
+        margin-top: 70px; /* 縮短上方留白 */
+        padding: 1rem;    /* 縮減左右內邊距，爭取手機面板空間 */
+    }
+
+    .hero h2 {
+        font-size: 2.2rem;
+    }
+    
+    .hero p {
+        font-size: 1rem;
+    }
+
+    /* ------ 2. 首頁區塊（Grid）修正 ------ */
+    .grid-container {
+        grid-template-columns: 1fr; /* 電腦 2 欄變手機單欄 */
+        gap: 1.25rem;
+    }
+
+    .level-grid {
+        grid-template-columns: 1fr; /* 難度按鈕改為垂直一條龍，防止字爆開 */
+        gap: 0.75rem;
+    }
+
+    .book-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)); /* 書本卡片手機上滿版 */
+        gap: 1rem;
+    }
+
+    /* ------ 3. 單字本細節頁面 (Book Detail) 修正 ------ */
+    .detail-header {
+        flex-direction: column;    /* 標題與按鈕群組改為上下排列 */
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    /* 🎯 修正重點：原本鎖死在底部的 header-actions 改為手機上方正常排列，不擋視線 */
+    .header-actions {
+        position: static;          /* 取消原本鎖死在底部的設定 */
+        width: 100%;
+        background: transparent;
+        padding: 0;
+        border-top: none;
+        display: flex;
+        flex-wrap: wrap;           /* 按鈕太多時會自動折行 */
+        gap: 0.5rem;
+    }
+
+    .header-actions button {
+        flex: 1;                   /* 讓按鈕平均分配寬度 */
+        min-width: 120px;
+        justify-content: center;
+        padding: 0.6rem;
+        font-size: 0.9rem;
+    }
+
+    /* ------ 4. 單字列表項目 (Word List) 修正 ------ */
+    .word-list {
+        gap: 0.75rem;
+    }
+
+    .word-item {
+        padding: 1rem;
+        flex-direction: column;    /* 單字、解釋、按鈕改成上下垂直排列 */
+        align-items: flex-start;
+        gap: 0.5rem;
+        position: relative;
+    }
+
+    /* 讓垃圾桶等圖標按鈕固定在卡片的右上角，畫面最乾淨 */
+    .word-item .icon-btn {
+        position: absolute;
+        right: 0.75rem;
+        top: 0.75rem;
+    }
+
+    /* ------ 5. 測驗畫面 (Quiz UI) 修正 ------ */
+    .quiz-container {
+        margin: 1.5rem auto;       /* 縮小測驗外殼邊距 */
+        padding: 0 0.5rem;
+    }
+
+    .quiz-question h2 {
+        font-size: 2.2rem;         /* 縮小題目英文字體，避免超長單字爆開 */
+        margin-bottom: 1.5rem;
+    }
+
+    .option-btn {
+        padding: 1rem;
+        font-size: 1rem;
+        border-radius: 12px;
+    }
+
+    /* ------ 6. 所有的彈出視窗 (Modals) 修正 ------ */
+    .modal-content {
+        width: 92%;                /* 讓視窗貼近手機邊緣，放大置中空間 */
+        padding: 1.5rem;
+        border-radius: 20px;
+    }
+
+    .modal-btns {
+        flex-direction: column;    /* 「確認/取消」按鈕在手機上改為上下堆疊，大幅降低誤觸率 */
+        gap: 0.75rem;
+    }
+    
+    .modal-btns button {
+        width: 100%;
+        padding: 0.8rem;
+    }
+
+    /* ------ 7. 相機畫面 (Camera UI) 修正 ------ */
+    .camera-view {
+        max-width: 100%;           /* 寬度 100% 適應手機螢幕 */
+        aspect-ratio: 4/5;         /* 調成更符合手機鏡頭的比例 */
+        border-radius: 16px;
     }
 }
+
 
 /* ==========================================================================
    📱 RWD 響應式裝置跨平台優化 (手機與平板補強)
