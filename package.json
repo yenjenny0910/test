@@ -1,10 +1,10 @@
 {
-  "name": "vacalens-7000-words",
+  "name": "vocalens-7000-words",
   "version": "1.0.0",
   "description": "7000 Vocabulary Learning System with Auto-Cleaning Database",
-  "main": "parse.js",
+  "main": "clean_vocabulary.js",
   "scripts": {
-    "clean-db": "node ./clean_vacabulary.js",
+    "clean-db": "node ./clean_vocabulary.js",
     "build": "npm run clean-db"
   },
   "keywords": [],
