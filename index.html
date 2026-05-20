@@ -536,35 +536,42 @@
             });
         }
 
-        // --- Open Custom Vocabulary Book ---
-        function openBook(bookId) {
-            currentBookId = bookId;
-            currentLevel = null;
-            
-            const book = books.find(b => b.id === bookId);
-            document.getElementById('current-book-name').textContent = book.name;
-            
-            // Show edit buttons since this is a user-defined book
-            document.getElementById('scan-btn').style.display = 'flex';
-            document.getElementById('add-word-btn').style.display = 'flex';
-            
-            renderWordList();
-            navigateTo('bookDetail');
-        }
+        // --- Open Custom Vocabulary Book (防呆修正版) ---
+function openBook(bookId) {
+    currentBookId = bookId;
+    currentLevel = null; // 🌟 確保切換到自訂書本時，內建 Level 被清空
+    
+    // 🧠 防呆：不論是數字還是字串 id，用 == 進行寬鬆比對
+    const book = books.find(b => b.id == bookId);
+    
+    if (book) {
+        document.getElementById('current-book-name').textContent = book.name;
+        
+        // Show edit buttons since this is a user-defined book
+        document.getElementById('scan-btn').style.display = 'flex';
+        document.getElementById('add-word-btn').style.display = 'flex';
+        
+        renderWordList();
+        navigateTo('bookDetail');
+    } else {
+        console.error(`找不到 ID 為 ${bookId} 的字卡本！`);
+        alert('書本讀取失敗，請重新整理網頁 😢');
+    }
+}
 
-        // --- Open Built-in CEEC Level Preview ---
-function openLevel(level) {
-    // 🧠 萬用防呆：不管傳進來的是什麼，一律轉成大寫開頭的 "LevelX"
+
+        function openLevel(level) {
     if (typeof level === 'number') {
         currentLevel = `Level${level}`;
     } else if (typeof level === 'string') {
-        // 把可能傳進來的 "level2" 變成 "Level2"
         currentLevel = level.charAt(0).toUpperCase() + level.slice(1);
     } else {
         currentLevel = level;
     }
     
-    currentBookId = null;
+    currentBookId = null; // 🌟 確保切換到內建 Level 時，自訂書本被清空
+    // ... 後續不變 ...
+
     
     document.getElementById('current-book-name').textContent = `7000 單挑戰 - ${currentLevel}`;
     
