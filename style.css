@@ -697,3 +697,136 @@ main {
         font-size: 1.2rem;
     }
 }
+
+/* ==========================================================================
+   📅 11. 學習日曆專屬修復樣式 (桌機預設 + 手機 RWD 自動自適應)
+   ========================================================================== */
+
+/* --- 桌機版預設樣式 --- */
+.calendar-card {
+    background: rgba(18, 24, 39, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 28px;
+    padding: 2rem;
+    margin-top: 2rem;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.calendar-month-label {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--text-main);
+}
+
+.calendar-nav-btn {
+    min-width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.calendar-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.calendar-grid .calendar-day {
+    min-height: 72px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.04);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-main);
+    font-weight: 700;
+    position: relative;
+    transition: var(--transition);
+}
+
+.calendar-grid .calendar-day.today {
+    border: 1px solid rgba(139, 92, 246, 0.45);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.15);
+}
+
+.calendar-grid .calendar-day.signed {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(34, 197, 94, 0.95));
+    color: white;
+}
+
+.calendar-grid .calendar-day.signed::after {
+    content: '✓';
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.calendar-grid .calendar-day.empty {
+    background: transparent;
+    box-shadow: none;
+}
+
+.calendar-grid .day-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: transparent;
+    box-shadow: none;
+    min-height: auto;
+    padding-bottom: 0.5rem;
+    text-align: center;
+}
+
+/* --- 📱 手機版微調 (當螢幕小於 768px 時自動縮小防爆開) --- */
+@media (max-width: 768px) {
+    .calendar-card {
+        padding: 1.25rem;
+        border-radius: 20px;
+    }
+    
+    .calendar-grid {
+        gap: 0.3rem; /* 縮小格子間距 */
+    }
+    
+    .calendar-grid .calendar-day {
+        min-height: 48px; /* 降低格子高度，防止手機畫面向下無限延伸 */
+        border-radius: 10px;
+        font-size: 0.9rem;
+    }
+    
+    .calendar-grid .calendar-day.signed::after {
+        top: 2px;
+        right: 4px;
+        font-size: 0.7rem;
+    }
+    
+    .calendar-grid .day-label {
+        font-size: 0.75rem;
+    }
+}
