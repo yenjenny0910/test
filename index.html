@@ -1437,21 +1437,6 @@ function resetCaptureButton(btn, text) {
             }).join('');
         }
 
-                openOcrPreview(entries, displayRawText);
-
-            } catch (e) {
-                console.error('OCR 失敗：', e);
-                rows.innerHTML = `
-                    <tr>
-                        <td colspan="3" style="text-align: center; padding: 2.5rem 1rem; color: var(--danger); font-weight: 500;">
-                            ❌ 辨識失敗：${e.message}
-                        </td>
-                    </tr>
-                `;
-                if (confirmBtn) confirmBtn.disabled = true;
-            }
-        }
-
         function openOcrPreview(words, rawText) {
             pendingOcrWords = words;
             const rows = document.getElementById('ocr-preview-rows');
@@ -1500,12 +1485,8 @@ function resetCaptureButton(btn, text) {
 
             if (confirmBtn) confirmBtn.disabled = false; // 恢復匯入按鈕點擊功能
             document.getElementById('ocr-preview-modal').classList.add('active');
-                    }
-
-            document.getElementById('ocr-preview-modal').classList.add('active');
         }
-
-                async function handleImageUpload(event) {
+        async function handleImageUpload(event) {
             const file = event.target.files && event.target.files[0];
             event.target.value = '';
             if (!file) return;
@@ -1585,10 +1566,22 @@ function resetCaptureButton(btn, text) {
                         </tr>
                     `;
                     return;
-        }
+                }
 
-            // 🚀 直接把處理好的精準單字陣列，餵給你的表格檢視器！
-            openOcrPreview(entries, displayRawText);
+                // 🚀 【核心修改 2】成功取得資料，交給 openOcrPreview 把資料蓋過去
+                openOcrPreview(entries, displayRawText);
+
+            } catch (e) {
+                console.error('OCR 失敗：', e);
+                rows.innerHTML = `
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 2.5rem 1rem; color: var(--danger); font-weight: 500;">
+                            ❌ 辨識失敗：${e.message}
+                        </td>
+                    </tr>
+                `;
+                if (confirmBtn) confirmBtn.disabled = true;
+            }
         }
 
 
@@ -1647,4 +1640,4 @@ function resetCaptureButton(btn, text) {
         initApp();
     </script>
 </body>
-    </html>
+                        </html>
