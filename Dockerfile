@@ -5,21 +5,21 @@ FROM node:20-alpine AS cleaner
 WORKDIR /tmp-build
 
 COPY package*.json ./
-RUN npm install --omit=dev
+# 這裡允許安裝所有套件以順利執行清洗
+RUN npm install
 
-# 複製包括 clean_vacabulary.js 和所有 txt 在內的檔案
 COPY . .
-
-# 執行清洗
 RUN npm run clean-db
 
+
 # ==========================================
-# 階段二：正式運行的主伺服器
+# 階段二：正式運行的主伺服器 (包含你的 Python 與 OCR 核心)
 # ==========================================
 FROM node:20-bullseye
 
 WORKDIR /app
 
+# 安裝 Linux 系統重型環境套件
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        python3 \
@@ -28,17 +28,20 @@ RUN apt-get update \
        tesseract-ocr-chi-sim \
     && rm -rf /var/lib/apt/lists/*
 
+# 🚨 先複製最新的 package.json，並強制重新安裝正式環境所需套件 (如 express)
 COPY package*.json ./
 COPY requirements.txt ./
-RUN npm install
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN npm cache clean --force \
+    && npm install \
+    && pip3 install --no-cache-dir -r requirements.txt
 
-# 複製原始碼
+# 複製其餘所有原始碼
 COPY . .
 
-# 🌟 只拿最重要的精華：把洗好的 ceec_words.js 偷渡過來即可！
+# 🌟 核心關鍵：將第一階段洗好的結晶直接偷渡過來覆蓋
 COPY --from=cleaner /tmp-build/ceec_words.js ./ceec_words.js
 
 EXPOSE 3001
 
+# 正式開機！此時 express 和 ceec_words.js 都已各就各位
 CMD ["npm", "start"]
