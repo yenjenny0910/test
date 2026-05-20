@@ -1821,11 +1821,11 @@ async function captureAndScan() {
     
     const btn = document.getElementById('capture-btn');
     const originalText = btn.innerText;
-    btn.style.background = 'var(--accent, #666)';
+    btn.style.background = '#666'; // 變色表示忙碌中
     btn.disabled = true;
     btn.innerText = 'AI 辨識中...';
 
-    // 將畫布畫面轉成圖片 Blob
+    // 將相機畫面轉成圖片 Blob
     canvas.toBlob(async (blob) => {
         if (!blob) {
             alert('圖片擷取失敗，請重試。');
@@ -1837,144 +1837,73 @@ async function captureAndScan() {
         formData.append('file', blob, 'scanned_image.png');
 
         try {
-            // 呼叫你在 Render 部署的後端 OCR 路由
-            const response = await fetch('/api/ocr', {
+            // 呼叫你的後端 API
+            const response = await fetch(`${API_URL}/api/ocr`, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    'x-user-id': currentUser.id
+                }
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.details || '伺服器辨識失敗');
+                const errorText = await response.text();
+                throw new Error(errorText || '伺服器辨識失敗');
             }
 
             const data = await response.json();
             
-            // 解析後端傳回來的 Gemini JSON 資料
-            let wordsArray = [];
-            if (typeof data.text === 'string') {
-                wordsArray = JSON.parse(data.text);
-            } else if (Array.isArray(data)) {
-                wordsArray = data;
-            } else if (data.text) {
-                wordsArray = data.text;
+            // ==========================================
+            // 🚀 核心修改點：讓相機結果直接解析並送進同一個預覽表格
+            // ==========================================
+            let entries = [];
+            let displayRawText = "";
+
+            try {
+                if (typeof data.text === 'string') {
+                    // 防呆：去除 AI 偶爾夾帶的 Markdown json 標籤
+                    const cleanJsonToken = data.text.replace(/```json|```/g, '').trim();
+                    entries = JSON.parse(cleanJsonToken);
+                    displayRawText = data.text; 
+                } else if (Array.isArray(data.text)) {
+                    entries = data.text;
+                } else if (Array.isArray(data)) {
+                    entries = data;
+                }
+            } catch (jsonErr) {
+                // 【保底機制】如果 AI 回傳純文字，就用舊功能切字
+                console.warn("相機回傳格式非標準 JSON，啟用原本的文字切分功能:", jsonErr);
+                const rawText = data.text || '';
+                entries = parseOcrLines(rawText);
+                displayRawText = rawText;
             }
 
-            if (!Array.isArray(wordsArray) || wordsArray.length === 0) {
-                alert('✨ 辨識完成，但沒有偵測到明顯的單字。');
+            if (!entries || entries.length === 0) {
+                alert('✨ 辨識完成，但沒有偵測到有效單字。');
                 stopCamera();
                 return;
             }
 
-            // 把辨識到的結果存進全域暫存區
-            pendingWords = wordsArray;
-
-            // 關閉相機，無縫打開「預覽修改視窗」
+            // 1. 先關閉黑色的相機鏡頭畫面
             stopCamera(); 
-            openPreviewModal();
+            
+            // 2. 完美無縫打開「同一個」包含輸入框的預覽修改表格！
+            openOcrPreview(entries, displayRawText);
 
         } catch (e) {
-            console.error('OCR 失敗:', e);
-            alert('掃描失敗: ' + e.message + '\n請檢查後端日誌或 API Key 是否正常。');
+            console.error('相機 OCR 失敗:', e);
+            alert('掃描失敗: ' + e.message);
         } finally {
             resetCaptureButton(btn, originalText);
         }
     }, 'image/png');
 }
 
+// 輔助函式：還原按鈕狀態
 function resetCaptureButton(btn, text) {
     btn.style.background = '';
     btn.disabled = false;
     btn.innerText = text || '拍照辨識';
-}
-
-// 4. 打開預覽修改視窗
-function openPreviewModal() {
-    document.getElementById('preview-modal').style.display = 'flex';
-    renderPreviewList();
-}
-
-// 5. 關閉預覽修改視窗
-function closePreviewModal() {
-    document.getElementById('preview-modal').style.display = 'none';
-    pendingWords = []; // 清空暫存
-}
-
-// 6. 將暫存單字渲染成可以編輯的輸入框列表
-function renderPreviewList() {
-    const container = document.getElementById('preview-list-container');
-    container.innerHTML = '';
-
-    if (pendingWords.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#666; margin: 20px 0;">目前無暫存單字，請重新掃描。</p>';
-        return;
-    }
-
-    pendingWords.forEach((item, index) => {
-        const row = document.createElement('div');
-        row.style = 'display: flex; gap: 8px; margin-bottom: 12px; align-items: center;';
-        row.innerHTML = `
-            <input type="text" value="${item.word || ''}" onchange="updatePendingWord(${index}, 'word', this.value)" style="flex: 2; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="單字">
-            <input type="text" value="${item.pos || ''}" onchange="updatePendingWord(${index}, 'pos', this.value)" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="詞性">
-            <input type="text" value="${item.def || ''}" onchange="updatePendingWord(${index}, 'def', this.value)" style="flex: 3; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="中文解釋">
-            <button onclick="deletePendingWord(${index})" style="background: #ff4d4d; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; font-weight: bold;">刪除</button>
-        `;
-        container.appendChild(row);
-    });
-}
-
-// 7. 使用者在界面修改欄位時，即時同步記憶體資料
-function updatePendingWord(index, field, value) {
-    if (pendingWords[index]) {
-        pendingWords[index][field] = value.trim();
-    }
-}
-
-// 8. 刪除單一暫存單字
-function deletePendingWord(index) {
-    pendingWords.splice(index, 1);
-    renderPreviewList(); // 重新刷新列表
-}
-
-// 9. 確認加入：最終按下才真正呼叫 API 寫入資料庫
-async function confirmAndSave() {
-    if (pendingWords.length === 0) {
-        alert('沒有可以匯入的單字！');
-        return;
-    }
-
-    // 尋找當前選擇的書本 (沿用你原本專案的變數 currentBookId)
-    const book = books.find(b => b.id === currentBookId);
-    if (!book) {
-        alert('找不到目前的單字本資料');
-        return;
-    }
-
-    let successCount = 0;
-
-    // 依序呼叫你原本專案裡的 apiPost 函式存入後端
-    for (const w of pendingWords) {
-        if (!w.word) continue; // 跳過空單字
-        
-        // 防重複檢查
-        if (!book.words.find(bw => bw.word.toLowerCase() === w.word.toLowerCase())) {
-            try {
-                // 呼叫你專案原本就寫好的 apiPost 函式
-                await apiPost(`/api/books/${currentBookId}/words`, w);
-                successCount++;
-            } catch (e) {
-                console.error(`儲存單字 ${w.word} 失敗:`, e);
-            }
-        }
-    }
-
-    // 更新本地快照並重整畫面 UI (沿用你原本專案的更新流程)
-    localStorage.setItem('vaca-books', JSON.stringify(books));
-    if (typeof loadData === 'function') await loadData();       
-    if (typeof renderWordList === 'function') renderWordList();       
-    
-    closePreviewModal(); // 關閉視窗
-    alert(`✨ 匯入完成！成功新增 ${successCount} 個新單字。`);
 }
 
         // --- User Authentication UI Logic ---
