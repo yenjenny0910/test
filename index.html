@@ -1437,11 +1437,28 @@ function resetCaptureButton(btn, text) {
             }).join('');
         }
 
+                openOcrPreview(entries, displayRawText);
+
+            } catch (e) {
+                console.error('OCR 失敗：', e);
+                rows.innerHTML = `
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 2.5rem 1rem; color: var(--danger); font-weight: 500;">
+                            ❌ 辨識失敗：${e.message}
+                        </td>
+                    </tr>
+                `;
+                if (confirmBtn) confirmBtn.disabled = true;
+            }
+        }
+
         function openOcrPreview(words, rawText) {
             pendingOcrWords = words;
             const rows = document.getElementById('ocr-preview-rows');
+            const confirmBtn = document.getElementById('confirm-ocr-import');
             const formattedPreview = document.getElementById('ocr-formatted-preview');
-            rows.innerHTML = '';
+            
+            rows.innerHTML = ''; // 清空原本的「辨識中...」提示列
             if (formattedPreview) {
                 formattedPreview.textContent = rawText || '';
             }
@@ -1468,15 +1485,27 @@ function resetCaptureButton(btn, text) {
                 rows.appendChild(row);
             }
 
+            // 🚀 【核心修改 3】如果單字重複，直接顯示在表格內，比瀏覽器自帶的 alert 視窗優雅許多
             if (added === 0) {
-                alert('這張圖片中的單字已經都存在於目前單字本中，或無法解析出有效單字。');
+                rows.innerHTML = `
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+                            ✨ 辨識完成！但圖片中的單字已全部存在於目前的單字本中。
+                        </td>
+                    </tr>
+                `;
+                if (confirmBtn) confirmBtn.disabled = true;
                 return;
             }
+
+            if (confirmBtn) confirmBtn.disabled = false; // 恢復匯入按鈕點擊功能
+            document.getElementById('ocr-preview-modal').classList.add('active');
+                    }
 
             document.getElementById('ocr-preview-modal').classList.add('active');
         }
 
-        async function handleImageUpload(event) {
+                async function handleImageUpload(event) {
             const file = event.target.files && event.target.files[0];
             event.target.value = '';
             if (!file) return;
@@ -1485,63 +1514,78 @@ function resetCaptureButton(btn, text) {
                 return;
             }
 
+            // 🚀 【核心修改 1】立刻打開預覽彈窗，並在表格內注入「辨識中」的狀態與動畫提示
+            const rows = document.getElementById('ocr-preview-rows');
+            const confirmBtn = document.getElementById('confirm-ocr-import');
+            
+            rows.innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align: center; padding: 3rem 1rem; color: var(--primary-light); font-weight: 600; font-size: 1.1rem; letter-spacing: 1px;">
+                        <span style="display: inline-block; animation: pulse 1.5s infinite; margin-right: 0.5rem;">⏳</span> 
+                        AI 智慧單字辨識中，請稍候...
+                    </td>
+                </tr>
+            `;
+            if (confirmBtn) confirmBtn.disabled = true; // 辨識過程中鎖定匯入按鈕
+            document.getElementById('ocr-preview-modal').classList.add('active');
+
             const formData = new FormData();
             formData.append('file', file);
             formData.append('lang', 'eng+chi_sim');
 
-            const response = await fetch(`${API_URL}/api/ocr`, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'x-user-id': currentUser.id
-                }
-            });
-
-            if (!response.ok) {
-                const text = await response.text();
-                let message = response.statusText;
-                try {
-                    const errorData = JSON.parse(text);
-                    const detail = errorData.details ? `\n${errorData.details}` : '';
-                    message = `${errorData.error || message}${detail}`;
-                } catch (e) {
-                    if (text) message = text;
-                }
-                console.error('OCR error response:', response.status, message);
-                alert('OCR 失敗：' + message);
-                return;
-            }
-            // ... 前半段上傳照片的 fetch 程式碼保持不變 ...
-            const data = await response.json();
-            
-            // 💡 核心修改點：解析新版 Gemini 回傳的 JSON 資料
-            let entries = [];
-            let displayRawText = "";
-
             try {
-                // 如果後端傳回的是 JSON 字串，就把它解析成真正的 JavaScript 陣列
-                if (typeof data.text === 'string') {
-                    // 先把文字前後可能不小心夾帶的 ```json 標籤去掉（防呆）
-                    const cleanJsonToken = data.text.replace(/```json|```/g, '').trim();
-                    entries = JSON.parse(cleanJsonToken);
-                } else if (Array.isArray(data.text)) {
-                    entries = data.text;
-                } else if (Array.isArray(data)) {
-                    entries = data;
-                }
-            } catch (jsonErr) {
-                console.error("Gemini 回傳的格式不是標準 JSON，嘗試啟用舊版保底拆解:", jsonErr);
-                // 保底機制：如果 AI 鬧脾氣沒回傳 JSON，就用你原本的舊功能去拆解純文字
-                const rawText = data.text || '';
-                entries = parseOcrLines(rawText);
-                displayRawText = rawText;
-            }
+                const response = await fetch(`${API_URL}/api/ocr`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'x-user-id': currentUser.id
+                    }
+                });
 
-            // 防呆：檢查有沒有順利轉換成單字陣列
-            if (!Array.isArray(entries) || entries.length === 0) {
-                alert('未辨識到任何有效單字，請換一張清晰的圖片再試一次。');
-                return;
-            }
+                if (!response.ok) {
+                    const text = await response.text();
+                    let message = response.statusText;
+                    try {
+                        const errorData = JSON.parse(text);
+                        const detail = errorData.details ? `\n${errorData.details}` : '';
+                        message = `${errorData.error || message}${detail}`;
+                    } catch (e) {
+                        if (text) message = text;
+                    }
+                    throw new Error(message);
+                }
+
+                const data = await response.json();
+                
+                let entries = [];
+                let displayRawText = "";
+
+                try {
+                    if (typeof data.text === 'string') {
+                        const cleanJsonToken = data.text.replace(/```json|```/g, '').trim();
+                        entries = JSON.parse(cleanJsonToken);
+                    } else if (Array.isArray(data.text)) {
+                        entries = data.text;
+                    } else if (Array.isArray(data)) {
+                        entries = data;
+                    }
+                } catch (jsonErr) {
+                    console.warn("Gemini 回傳的格式不是標準 JSON，嘗試啟用舊版保底拆解:", jsonErr);
+                    const rawText = data.text || '';
+                    entries = parseOcrLines(rawText);
+                    displayRawText = rawText;
+                }
+
+                if (!Array.isArray(entries) || entries.length === 0) {
+                    rows.innerHTML = `
+                        <tr>
+                            <td colspan="3" style="text-align: center; padding: 2.5rem 1rem; color: var(--danger); font-weight: 500;">
+                                ❌ 未辨識到任何有效單字，請換一張清晰的圖片再試一次。
+                            </td>
+                        </tr>
+                    `;
+                    return;
+        }
 
             // 🚀 直接把處理好的精準單字陣列，餵給你的表格檢視器！
             openOcrPreview(entries, displayRawText);
