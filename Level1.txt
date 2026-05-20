@@ -32,7 +32,7 @@
  already [ɔlˋrɛdɪ] adv. 已經 
  also [ˋɔlso] adv. 也 
  always [ˋɔlwez] adv. 總是 
- am [æ m] (第一人稱) vi. 是 
+ am [æ m] vi. 是(第一人稱) 
  among [əˋmʌŋ] prep. 在…之中 
  and [æ nd] conj. 和 
  anger [ˋæŋgɚ] n. 憤怒 
@@ -47,7 +47,7 @@
  appear [əˋpɪr] vi. 出現 
  apple [ˋæp!] n. 蘋果 
  April/Apr. [ˋeprəl] n. 四月 
- are [ɑr] (第二人稱) vi. 是 
+ are [ɑr]  vi. 是(第二人稱)
  area [ˋɛrɪə] n. 面積 
  arm (1) [ɑrm] n. 手臂 
  army[ˋɑrmɪ] n. 軍隊 
