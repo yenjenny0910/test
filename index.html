@@ -2438,18 +2438,43 @@ async function confirmAndSave() {
                 alert('OCR 失敗：' + message);
                 return;
             }
-
+            // ... 前半段上傳照片的 fetch 程式碼保持不變 ...
             const data = await response.json();
-            const rawText = data.text || '';
-            const entries = parseOcrLines(rawText);
+            
+            // 💡 核心修改點：解析新版 Gemini 回傳的 JSON 資料
+            let entries = [];
+            let displayRawText = "";
 
-            if (entries.length === 0) {
-                alert('未辨識到任何有效文字，請換一張清晰的圖片再試一次。');
+            try {
+                // 如果後端傳回的是 JSON 字串，就把它解析成真正的 JavaScript 陣列
+                if (typeof data.text === 'string') {
+                    // 先把文字前後可能不小心夾帶的 ```json 標籤去掉（防呆）
+                    const cleanJsonToken = data.text.replace(/```json|```/g, '').trim();
+                    entries = JSON.parse(cleanJsonToken);
+                    displayRawText = data.text; // 留作備用顯示
+                } else if (Array.isArray(data.text)) {
+                    entries = data.text;
+                } else if (Array.isArray(data)) {
+                    entries = data;
+                }
+            } catch (jsonErr) {
+                console.error("Gemini 回傳的格式不是標準 JSON，嘗試啟用舊版保底拆解:", jsonErr);
+                // 保底機制：如果 AI 鬧脾氣沒回傳 JSON，就用你原本的舊功能去拆解純文字
+                const rawText = data.text || '';
+                entries = parseOcrLines(rawText);
+                displayRawText = rawText;
+            }
+
+            // 防呆：檢查有沒有順利轉換成單字陣列
+            if (!Array.isArray(entries) || entries.length === 0) {
+                alert('未辨識到任何有效單字，請換一張清晰的圖片再試一次。');
                 return;
             }
 
-            openOcrPreview(entries, rawText);
+            // 🚀 直接把處理好的精準單字陣列，餵給你的表格檢視器！
+            openOcrPreview(entries, displayRawText);
         }
+
 
         async function confirmOcrImport() {
             const rows = Array.from(document.querySelectorAll('#ocr-preview-rows tr'));
