@@ -542,3 +542,128 @@ main {
         padding-bottom: 80px;
     }
 }
+
+/* ==========================================================================
+   📱 RWD 響應式裝置跨平台優化 (手機與平板補強)
+   ========================================================================== */
+
+/* 1. 🌟 新增：針對我們剛才大改的 OCR 彈出視窗進行「完美手機化」排版 */
+#ocr-preview-modal .modal-content {
+    max-width: 850px;       /* 在電腦上展開成舒適的寬度 */
+    width: 95%;
+    max-height: 85vh;       /* 限制最大高度，防止爆出螢幕 */
+    overflow-y: auto;       /* 超出高度時內部可以滾動 */
+    padding: 1.5rem;
+}
+
+/* 讓 OCR 的表格在手機上擁有獨立橫向滾動能力，絕對不會被擠扁 */
+.ocr-table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-top: 1rem;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+#ocr-preview-rows input {
+    min-width: 100px; /* 確保手機上輸入框不會縮小到無法打字 */
+}
+
+
+/* 2. 📱 針對 中/小螢幕裝置 (平板與手機) 的全面微調 */
+@media (max-width: 768px) {
+    /* 調整主要區塊的內邊距，把寶貴的手機空間留給內容 */
+    main {
+        margin-top: 70px;
+        padding: 1rem;
+    }
+
+    /* 讓首頁的大標題在手機上縮小字體，避免換行太突兀 */
+    .hero h2 {
+        font-size: 2.2rem;
+    }
+    
+    .hero p {
+        font-size: 1rem;
+    }
+
+    /* 三個難度等級按鈕 (Level Grid) 改為垂直排列或雙排，防止文字擠在一起 */
+    .level-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    /* 書本卡片在手機上自動調整為單排或雙排 */
+    .book-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1rem;
+    }
+
+    /* 調整單字列表項目的結構：手機上把刪除按鈕擠到下面或右邊 */
+    .word-item {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        position: relative;
+    }
+
+    /* 讓單字本右側的刪除等小按鈕，在手機上定位在右上角 */
+    .word-item .icon-btn {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    /* 測驗 (Quiz) 畫面在手機上字體微調 */
+    .quiz-question h2 {
+        font-size: 2.2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .option-btn {
+        padding: 1rem;
+        font-size: 1rem;
+    }
+
+    /* 相機畫面外殼：在手機上自適應寬度，填滿畫面 */
+    .camera-view {
+        width: 100%;
+        max-width: 100%;
+        aspect-ratio: 4/5; /* 稍微拉長一點點，更符合手機鏡頭比例 */
+    }
+
+    /* 彈出視窗外殼縮小內邊距，貼近手機邊緣 */
+    .modal-content {
+        padding: 1.5rem;
+        width: 92%;
+    }
+
+    /* 讓彈出視窗底部的「確認/取消」按鈕在手機上變成大大的上下堆疊，更好按 */
+    .modal-btns {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .modal-btns button {
+        width: 100%;
+        padding: 1rem;
+    }
+}
+
+/* 3. 📱 針對超小螢幕手機 (如 iPhone SE) 的極致防爆修正 */
+@media (max-width: 380px) {
+    .hero h2 {
+        font-size: 1.8rem;
+    }
+    
+    .nav-content {
+        padding: 1rem;
+    }
+    
+    .logo {
+        font-size: 1.2rem;
+    }
+}
