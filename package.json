@@ -1,7 +1,7 @@
 {
   "name": "vocalens-7000-words",
   "version": "1.0.0",
-  "description": "7000 Vocabulary Learning System with Auto-Cleaning Database",
+  "description": "7000 Vocabulary Learning System with Auto-Cleaning Database and Gemini AI",
   "main": "server.js",
   "scripts": {
     "clean-db": "node ./clean_vocabulary.js",
@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google/generative-ai": "^0.11.0",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "express": "^4.19.2",
