@@ -131,18 +131,21 @@
                     </button>
                     <h2 id="current-book-name">單字本名稱</h2>
                     <div class="header-actions">
-                        <button id="scan-btn" class="secondary-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-                            AI 掃描
-                        </button>
-                        <button id="upload-image-btn" class="secondary-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16M8 7v10M16 7v10"/></svg>
-                            上傳圖片
-                        </button>
-                        <button id="add-word-btn" class="secondary-btn" onclick="document.getElementById('word-modal').classList.add('active');">
+                        <button id="scan-btn" class="secondary-btn" onclick="event.stopPropagation(); startCamera();">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+    AI 掃描
+</button>
+
+<button id="upload-image-btn" class="secondary-btn" onclick="event.stopPropagation(); document.getElementById('ocr-image-input').click();">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16M8 7v10M16 7v10"/></svg>
+    上傳圖片
+</button>
+
+<button id="add-word-btn" class="secondary-btn" onclick="event.stopPropagation(); document.getElementById('word-modal').classList.add('active');">
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
     手動新增
-                        </button>
+</button>
+
 
                         <button id="practice-book-btn" class="secondary-btn" style="background: rgba(139, 92, 246, 0.12); border-color: rgba(139, 92, 246, 0.25); color: var(--primary-light);">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
@@ -1589,8 +1592,6 @@ function resetCaptureButton(btn, text) {
         document.getElementById('confirm-ocr-import').onclick = confirmOcrImport;
 
         // Camera event triggers
-        document.getElementById('scan-btn').onclick = startCamera;
-        document.getElementById('upload-image-btn').onclick = () => document.getElementById('ocr-image-input').click();
         document.getElementById('close-camera').onclick = stopCamera;
         document.getElementById('capture-btn').onclick = captureAndScan;
 
@@ -1598,7 +1599,6 @@ function resetCaptureButton(btn, text) {
         document.getElementById('next-month-btn').onclick = () => changeCalendarMonth(1);
 
         document.getElementById('ocr-image-input').onchange = handleImageUpload;
-
         // --- Start App ---
         initApp();
     </script>
