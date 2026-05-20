@@ -830,3 +830,172 @@ main {
         font-size: 0.75rem;
     }
 }
+
+/* ==========================================================================
+   🃏 12. 互動單字卡專屬修復樣式 (桌機 3D 翻轉 + 手機 RWD 自動縮放)
+   ========================================================================== */
+
+/* --- 基礎容器與 3D 舞台設定 --- */
+.flashcard-container {
+    width: 100%;
+    max-width: 440px;
+    height: 290px;
+    perspective: 1000px; /* 賦予翻面時的立體空間感 */
+    margin: 2rem auto;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* --- 卡片本體與翻轉軸 --- */
+.flashcard {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d; /* 讓子元素維持 3D 空間 */
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 💡 當 JS 控制加上 .flipped 時，整張卡片旋轉 180 度 */
+.flashcard.flipped {
+    transform: rotateY(180deg);
+}
+
+/* --- 卡片正面與背面的共通設定 --- */
+.card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden; /* 關鍵：翻到背面時，隱藏正面 */
+    -webkit-backface-visibility: hidden; /* 確保 iOS / Safari 相容性 */
+    border-radius: 32px;
+    border: 1px solid var(--glass-border);
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
+    transition: var(--transition);
+}
+
+/* --- 正面：深色科技感 --- */
+.card-front {
+    background: rgba(30, 41, 59, 0.96);
+    color: var(--text-main);
+}
+
+/* --- 背面：漸層炫彩感 --- */
+.card-back {
+    background: linear-gradient(135deg, var(--primary-dark), #4f46e5);
+    color: white;
+    transform: rotateY(180deg); /* 預設先轉過去背面 */
+    box-shadow: 0 20px 45px rgba(139, 92, 246, 0.35);
+}
+
+/* --- 卡片內文字與標籤 --- */
+.card-face h2 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    margin-bottom: 0.8rem;
+    word-break: break-all;
+    text-align: center;
+}
+
+.card-pos {
+    background: rgba(244, 114, 182, 0.15);
+    color: var(--accent-light);
+    border: 1px solid rgba(244, 114, 182, 0.25);
+    padding: 0.3rem 1rem;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 1.2rem;
+    letter-spacing: 0.5px;
+}
+
+.card-def {
+    font-size: 1.8rem;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.4;
+    color: var(--text-main);
+}
+
+/* --- 下方滑動/熟練度控制按鈕 --- */
+.practice-controls {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.swipe-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.btn-review {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--danger);
+}
+
+.btn-review:hover {
+    background: var(--danger);
+    color: white;
+    box-shadow: 0 12px 30px rgba(239, 68, 68, 0.4);
+    transform: scale(1.1) translateY(-2px);
+}
+
+.btn-mastered {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: var(--safe);
+}
+
+.btn-mastered:hover {
+    background: var(--safe);
+    color: white;
+    box-shadow: 0 12px 30px rgba(16, 185, 129, 0.4);
+    transform: scale(1.1) translateY(-2px);
+}
+
+/* ==========================================================================
+   📱 手機版 RWD 微調 (縮小卡片尺寸，防止小螢幕爆開)
+   ========================================================================== */
+@media (max-width: 768px) {
+    .flashcard-container {
+        max-width: 90% !important;
+        height: 240px !important; /* 縮減手機版卡片高度 */
+        margin: 1.5rem auto;
+    }
+    
+    .card-face {
+        padding: 1.5rem !important;
+        border-radius: 24px;
+    }
+    
+    .card-face h2 {
+        font-size: 2.2rem !important; /* 手機版單字字體縮小 */
+    }
+    
+    .card-def {
+        font-size: 1.4rem !important; /* 手機版中文釋義縮小 */
+    }
+    
+    .swipe-btn {
+        width: 60px !important;
+        height: 60px !important;
+    }
+}
