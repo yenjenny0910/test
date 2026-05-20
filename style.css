@@ -572,19 +572,11 @@ main {
         font-size: 1rem;
     }
 
-    .grid-container {
-        grid-template-columns: 1fr; 
+    .grid-container,
+    .level-grid,
+    #book-list { /* 修正：精準對齊你的 JS 渲染名稱 */
+        grid-template-columns: 1fr !important; 
         gap: 1.25rem;
-    }
-
-    .level-grid {
-        grid-template-columns: 1fr; 
-        gap: 0.75rem;
-    }
-
-    .book-grid {
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
-        gap: 1rem;
     }
 
     /* 單字本內頁修正 */
@@ -594,18 +586,17 @@ main {
         gap: 1rem;
     }
 
-    .header-actions {
-        position: static;          
-        width: 100%;
-        background: transparent;
-        padding: 0;
-        border-top: none;
-        display: flex;
-        flex-wrap: wrap;           
+    /* 修正：對齊你畫面頂端的按鈕群組區塊（如：拍照辨識、手動新增） */
+    .header-actions, 
+    .detail-header div {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;           
         gap: 0.5rem;
     }
 
-    .header-actions button {
+    .header-actions button,
+    .detail-header button {
         flex: 1;                   
         min-width: 120px;
         justify-content: center;
@@ -614,7 +605,9 @@ main {
     }
 
     /* 單字條目卡片化 */
-    .word-list {
+    #word-list { /* 修正：將 .word-list 改為 #word-list */
+        display: flex;
+        flex-direction: column;
         gap: 0.75rem;
     }
 
@@ -626,35 +619,48 @@ main {
         position: relative;
     }
 
-    .word-item .icon-btn {
+    /* 讓單字本右側的刪除按鈕在手機上好點擊 */
+    .word-item .word-actions {
         position: absolute;
         right: 0.75rem;
         top: 50%;
         transform: translateY(-50%);
     }
 
-    /* 測驗畫面調整 */
+    /* 測驗畫面調整 (打字填空新版微調) */
     .quiz-container {
         margin: 1.5rem auto;       
-        padding: 0 0.5rem;
+        padding: 0 1rem;
+        width: 100% !important;
+        max-width: 100% !important;
     }
 
     .quiz-question h2 {
-        font-size: 2.2rem;         
-        margin-bottom: 1.5rem;
+        font-size: 2rem;         
+        margin-bottom: 1.2rem;
     }
 
-    .option-btn {
-        padding: 1rem;
-        font-size: 1rem;
-        border-radius: 12px;
+    /* 修正：針對你新版測驗的「輸入框」與「送出按鈕」做手機版放大 */
+    #quiz-answer-input {
+        width: 100% !important;
+        font-size: 1.2rem !important;
+        padding: 0.8rem !important;
     }
 
-    /* 通用彈窗與相機 */
-    .modal-content {
-        width: 92%;                
-        padding: 1.5rem;
+    #submit-answer-btn {
+        width: 100% !important;
+        padding: 1rem !important;
+        font-size: 1.1rem !important;
+    }
+
+    /* 通用彈窗與相機 (如：OCR 預覽、新增單字彈窗) */
+    .modal-content, 
+    #ocr-preview-modal .modal-content {
+        width: 92% !important;                
+        padding: 1.25rem !important;
         border-radius: 20px;
+        max-height: 85vh;
+        overflow-y: auto; /* 防止表格太長滑不出畫面 */
     }
 
     .modal-btns {
@@ -667,10 +673,14 @@ main {
         padding: 0.8rem;
     }
 
-    .camera-view {
-        max-width: 100%;           
-        aspect-ratio: 4/5;         
+    /* 相機鏡頭畫面 */
+    .camera-view, 
+    #video {
+        width: 100% !important;
+        max-width: 100% !important;           
+        aspect-ratio: 4/3;         
         border-radius: 16px;
+        object-fit: cover;
     }
 }
 
