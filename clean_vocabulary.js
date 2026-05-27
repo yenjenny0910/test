@@ -18,82 +18,114 @@ function cleanLine(line) {
 }
 
 /**
- * 解析單行單字：完美解決「無詞性」、「多詞性前置」、「詞性夾在中間」等大考中心排版混亂問題
+/**
+ * 終極解析單行單字：解決詞性黏連、詞性後置、無空格等所有排版大魔王
  */
 function parseCleanedLine(line) {
     line = line.trim();
     if (!line) return [];
 
-    // 支援的詞性清單
+    // 嚴格定義詞性關鍵字（依長度排序）
     const posList = ['prep.', 'conj.', 'pron.', 'aux.', 'adj.', 'adv.', 'num.', 'int.', 'art.', 'vi.', 'vt.', 'n.', 'v.', 'a.', 'ad.'];
-
-    // 1. 第一步：利用中文字元（\u4e00-\u9fff）作為分水嶺，把「英文/詞性區」與「中文定義區」切開
-    const splitMatch = line.match(/^([a-zA-Z\s\-'\.\/,1-9]+)([\u4e00-\u9fff].*)$/);
-    if (!splitMatch) return []; // 格式完全不符則跳過
-
-    let englishPart = splitMatch[1].trim();
-    let defPart = splitMatch[2].trim();
-
-    // 2. 第二步：從 englishPart 裡面，把所有藏在裡面的詞性（Pos）抓出來
+    
     let foundPosInLine = [];
+    
+    // 1. 全域搜尋行內所有符合的詞性標籤（包含黏在一起的情況）
     posList.forEach(pos => {
         let idx = -1;
-        while ((idx = englishPart.indexOf(pos, idx + 1)) !== -1) {
-            // 確保不是其他單字的一部分（例如 general 裡面的 n.）
-            const before = idx === 0 ? ' ' : englishPart[idx - 1];
-            const after = idx + pos.length >= englishPart.length ? ' ' : englishPart[idx + pos.length];
-            if (/[\s\/,;]/.test(before) && /[\s\/,;]/.test(after)) {
+        while ((idx = line.indexOf(pos, idx + 1)) !== -1) {
+            // 為了防禦 general 裡面的 n.，我們要確保這個 pos 不是被英文字母夾在中間
+            const beforeChar = idx > 0 ? line[idx - 1] : ' ';
+            const afterChar = idx + pos.length < line.length ? line[idx + pos.length] : ' ';
+            
+            // 只要詞性的前後不是標準的英文字母，就認定它是詞性標籤
+            if (!/[a-zA-Z]/.test(beforeChar) || !/[a-zA-Z]/.test(afterChar)) {
                 foundPosInLine.push({ pos: pos, index: idx });
             }
         }
     });
 
-    // 依出現位置排序
+    // 依出現在行中的先後順序排序
     foundPosInLine.sort((a, b) => a.index - b.index);
 
     let word = "";
+    let def = "";
     let finalPosList = [];
 
-    // 3. 第三步：根據「詞性出現的位置」來通靈真正的單字是誰
+    // 2. 根據是否偵測到詞性，切換不同的解析大腦
     if (foundPosInLine.length > 0) {
-        // 情況 A：詞性在中間（如 "apple n. 蘋果"），第一個詞性左邊的就是單字
-        if (foundPosInLine[0].index > 1) {
-            word = englishPart.slice(0, foundPosInLine[0].index).trim();
-        } 
-        // 情況 B：詞性在最前面（如 "vt., vi. drop"），最後一個詞性右邊的才是單字
-        else {
-            const lastPosObj = foundPosInLine[foundPosInLine.length - 1];
-            word = englishPart.slice(lastPosObj.index + lastPosObj.pos.length).trim();
-        }
-
-        // 收集這行出現的所有詞性，並做標準化
+        // 標準化所有找到的詞性
         foundPosInLine.forEach(item => {
             let p = item.pos;
             if (p === 'a.') p = 'adj.';
             if (p === 'ad.') p = 'adv.';
             if (!finalPosList.includes(p)) finalPosList.push(p);
         });
+
+        const firstPos = foundPosInLine[0];
+        const lastPos = foundPosInLine[foundPosInLine.length - 1];
+
+        if (firstPos.index === 0) {
+            // 【型態 A】詞性在最前面：例如 "vt., vi. fly 飛"
+            // 單字在最後一個詞性後面，直到遇到中文為止
+            let remain = line.slice(lastPos.index + lastPos.pos.length).trim();
+            const matchChinese = remain.match(/([\u4e00-\u9fff].*)$/);
+            if (matchChinese) {
+                def = matchChinese[1];
+                word = remain.slice(0, remain.indexOf(def)).trim();
+            } else {
+                word = remain;
+            }
+        } else {
+            // 【型態 B】詞性在中間或後面：例如 "apple n. 蘋果" 或 "abstractadj.抽象的" 或 "abandon 拋棄 v."
+            // 第一個詞性左邊的一定是英文單字（或者是單字+一部分中文）
+            let leftPart = line.slice(0, firstPos.index).trim();
+            
+            // 檢查左邊是不是純英文。如果是，代表詞性在中間 (apple n. 蘋果)
+            if (/^[a-zA-Z\s\-'\.\/,1-9\(\)]+$/.test(leftPart)) {
+                word = leftPart;
+                // 右邊就是中文定義（把其他詞性標籤拿掉）
+                let rightPart = line.slice(firstPos.index).trim();
+                foundPosInLine.forEach(item => {
+                    rightPart = rightPart.replace(item.pos, ' ');
+                });
+                def = rightPart;
+            } else {
+                // 如果左邊包含中文，代表詞性後置了 (abandon 拋棄 v.)
+                const matchEnglish = leftPart.match(/^([a-zA-Z\s\-'\.\/,1-9\(\)]+)/);
+                if (matchEnglish) {
+                    word = matchEnglish[1];
+                    def = leftPart.slice(word.length);
+                }
+            }
+        }
     } else {
-        // 情況 C：完全沒有詞性標記（如 "apple 蘋果"）
-        word = englishPart;
+        // 【型態 C】完全沒有詞性標記：例如 "pencil 鉛筆"
+        // 直接用第一個中文字元把英文和中文切開
+        const matchSplit = line.match(/^([a-zA-Z\s\-'\.\/,1-9\(\)]+)([\u4e00-\u9fff].*)$/);
+        if (matchSplit) {
+            word = matchSplit[1];
+            def = matchSplit[2];
+        } else {
+            // 防呆：如果連中文都沒有，整行當作單字
+            word = line;
+        }
     }
 
-    // 4. 清理單字尾端的雜質（如大考中心的重複數字、多餘斜線逗號）
-    word = word.replace(/[\/,;\s]+$/, '').replace(/^[\/,;\s]+/, ''); // 拔除首尾標點
-    word = word.replace(/([^a-zA-Z0-9])\d+$/, '$1').replace(/[1-9]$/, '').trim(); // 拔除重複序號
-
-    // 清理中文首尾雜質
-    defPart = defPart.replace(/^[\s\/,\uff0c\u3001]+|[\s\/,\uff0c\u3001]+$/g, '').trim();
+    // 3. 終極前後雜質清理（清洗括號、標點符號、大考序號）
+    word = word.replace(/[()（）\/,;\s]+$/, '').replace(/^[()（）\/,;\s]+/, '').trim();
+    word = word.replace(/([^a-zA-Z0-9])\d+$/, '$1').replace(/[1-9]$/, '').trim();
+    
+    def = def.replace(/^[\s\/,\uff0c\u3001;；:]+|[\s\/,\uff0c\u3001;；:]+$/g, '').trim();
 
     if (!word) return [];
 
-    // 5. 格式化輸出：如果有多個詞性，我們把它們打包在一起回傳
     const finalPosStr = finalPosList.length > 0 ? finalPosList.join(', ') : 'u.';
-    
+
     return [{
         word: word,
         pos: finalPosStr,
-        def: defPart
+        def: def
     }];
 }
 
