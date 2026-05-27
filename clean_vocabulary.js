@@ -18,94 +18,6 @@ function cleanLine(line) {
 }
 
 /**
-/**
- * 終極解析單行單字：解決詞性黏連、詞性後置、無空格等所有排版大魔王
- */
-function parseCleanedLine(line) {
-    line = line.trim();
-    if (!line) return [];
-
-    // 嚴格定義詞性關鍵字（依長度排序）
-    const posList = ['prep.', 'conj.', 'pron.', 'aux.', 'adj.', 'adv.', 'num.', 'int.', 'art.', 'vi.', 'vt.', 'n.', 'v.', 'a.', 'ad.'];
-    
-    let foundPosInLine = [];
-    
-    // 1. 全域搜尋行內所有符合的詞性標籤（包含黏在一起的情況）
-    posList.forEach(pos => {
-        let idx = -1;
-        while ((idx = line.indexOf(pos, idx + 1)) !== -1) {
-            // 為了防禦 general 裡面的 n.，我們要確保這個 pos 不是被英文字母夾在中間
-            const beforeChar = idx > 0 ? line[idx - 1] : ' ';
-            const afterChar = idx + pos.length < line.length ? line[idx + pos.length] : ' ';
-            
-            // 只要詞性的前後不是標準的英文字母，就認定它是詞性標籤
-            if (!/[a-zA-Z]/.test(beforeChar) || !/[a-zA-Z]/.test(afterChar)) {
-                foundPosInLine.push({ pos: pos, index: idx });
-            }
-        }
-    });
-
-    // 依出現在行中的先後順序排序
-    foundPosInLine.sort((a, b) => a.index - b.index);
-
-    let word = "";
-    let def = "";
-    let finalPosList = [];
-
-    // 2. 根據是否偵測到詞性，切換不同的解析大腦
-    if (foundPosInLine.length > 0) {
-        // 標準化所有找到的詞性
-        foundPosInLine.forEach(item => {
-            let p = item.pos;
-            if (p === 'a.') p = 'adj.';
-            if (p === 'ad.') p = 'adv.';
-            if (!finalPosList.includes(p)) finalPosList.push(p);
-        });
-
-        const firstPos = foundPosInLine[0];
-        const lastPos = foundPosInLine[foundPosInLine.length - 1];
-
-        if (firstPos.index === 0) {
-            // 【型態 A】詞性在最前面：例如 "vt., vi. fly 飛"
-            // 單字在最後一個詞性後面，直到遇到中文為止
-            let remain = line.slice(lastPos.index + lastPos.pos.length).trim();
-            const matchChinese = remain.match(/([\u4e00-\u9fff].*)$/);
-            if (matchChinese) {
-                def = matchChinese[1];
-                word = remain.slice(0, remain.indexOf(def)).trim();
-            } else {
-                word = remain;
-            }
-        } else {
-            // 【型態 B】詞性在中間或後面：例如 "apple n. 蘋果" 或 "abstractadj.抽象的" 或 "abandon 拋棄 v."
-            // 第一個詞性左邊的一定是英文單字（或者是單字+一部分中文）
-            let leftPart = line.slice(0, firstPos.index).trim();
-            
-            // 檢查左邊是不是純英文。如果是，代表詞性在中間 (apple n. 蘋果)
-            if (/^[a-zA-Z\s\-'\.\/,1-9\(\)]+$/.test(leftPart)) {
-                word = leftPart;
-                // 右邊就是中文定義（把其他詞性標籤拿掉）
-                let rightPart = line.slice(firstPos.index).trim();
-                foundPosInLine.forEach(item => {
-                    rightPart = rightPart.replace(item.pos, ' ');
-                });
-                def = rightPart;
-            } else {
-                // 如果左邊包含中文，代表詞性後置了 (abandon 拋棄 v.)
-                const matchEnglish = leftPart.match(/^([a-zA-Z\s\-'\.\/,1-9\(\)]+)/);
-                if (matchEnglish) {
-                    word = matchEnglish[1];
-                    def = leftPart.slice(word.length);
-                }
-            }
-        }
-    } else {
-        // 【型態 C】完全沒有詞性標記：例如 "pencil 鉛筆"
-        // 直接用第一個中文字元把英文和中文切開
-        const matchSplit = line.match(/^([a-zA-Z\s\-'\.\/,1-9\(\)]+)([\u4e00-\u9fff].*)$/);
-        if (matchSplit) {
-            word = matchSplit[1];
-/**
  * 終極解析單行單字：完美防禦 Jun. 等月份縮寫誤判、強效剝離全半形殘留括號
  */
 function parseCleanedLine(line) {
@@ -222,6 +134,7 @@ function parseCleanedLine(line) {
         def: def
     }];
 }
+
 
 /**
  * 主程式：讀取根目錄 Level1~6.txt，進行自動清洗與智慧合併
