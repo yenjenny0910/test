@@ -173,8 +173,29 @@ function main() {
         const currentLevelMap = new Map();
 
         // 3. 解析每一行
-        for (let i = 0; i < mergedLines.length; i++) {
-            const line = mergedLines[i];
+for (let i = 0; i < mergedLines.length; i++) {
+            const line = mergedLines[i].trim();
+            
+            // =========================================================================
+            // 🛑 【新增：標題與雜質過濾器】 🛑
+            // =========================================================================
+            // 1. 過濾掉純數字（頁碼）
+            if (/^\d+$/.test(line)) continue;
+            
+            // 2. 過濾掉大考中心的標題、級數宣告、頁面標籤
+            const lowerLine = line.toLowerCase();
+            if (
+                lowerLine.includes('level') || 
+                lowerLine.includes('page') || 
+                lowerLine.includes('大考') || 
+                lowerLine.includes('單字') || 
+                lowerLine.includes('字表') || 
+                lowerLine.includes('版權所有') ||
+                line.length <= 1 // 過濾掉單個莫名其妙的英文字母或雜訊
+            ) {
+                console.log(`🗑️ 已自動過濾標題或雜訊行 -> "${line}"`);
+                continue;
+                }
             
             try {
                 let isContinuation = false;
