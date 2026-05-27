@@ -18,123 +18,119 @@ function cleanLine(line) {
 }
 
 /**
- * 終極解析單行單字：完美防禦 Jun. 等月份縮寫誤判、強效剝離全半形殘留括號
+ * 萬能斷詞解析器：支援單行多單字、智慧剝離殘留中文、防止詞性錯位、徹底杜絕 Jun. 等月份縮寫誤判
  */
 function parseCleanedLine(line) {
-    line = line.trim();
-    if (!line) return [];
+    try {
+        line = line.trim();
+        if (!line) return [];
 
-    // 1. 【新增：前置括號大掃除】直接把英文部分的補充括號（不論全半形、內含什麼字）先清掉
-    // 例如： "absorb (vt.) 吸收" -> "absorb 吸收"
-    // 例如： "apple [C] 蘋果" -> "apple 蘋果"
-    line = line.replace(/[\(\[\uff08][a-zA-Z\s\.\,\/\uff0c]*[\)\]\uff09]/g, ' ');
-    // 再清一次可能連續產生的空格
-    line = line.replace(/\s+/g, ' ').trim();
+        // 1. 強效全功能括號預清洗（避免括號內文字干擾斷詞）
+        line = line.replace(/[\(\[\uff08].*?[\)\]\uff09]/g, ' ');
+        line = line.replace(/\s+/g, ' ').trim();
 
-    // 嚴格定義詞性關鍵字（依長度排序）
-    const posList = ['prep.', 'conj.', 'pron.', 'aux.', 'adj.', 'adv.', 'num.', 'int.', 'art.', 'vi.', 'vt.', 'n.', 'v.', 'a.', 'ad.'];
-    
-    let foundPosInLine = [];
-    
-    // 2. 全域搜尋行內所有符合的詞性標籤
-    posList.forEach(pos => {
-        let idx = -1;
-        while ((idx = line.indexOf(pos, idx + 1)) !== -1) {
-            const beforeChar = idx > 0 ? line[idx - 1] : ' ';
-            const afterChar = idx + pos.length < line.length ? line[idx + pos.length] : ' ';
-            
-            // 🛑 【重大修正：嚴格詞性邊界】
-            // 詞性的前面不能是小寫英文字母（防 general 裡的 n.），
-            // 且「前面絕對不能是大寫字母」（防 Jun. 裡面的 un. 被誤判為詞性！）
-            // 詞性後面必須是空格、標點符號或中文
-            if (!/[a-zA-Z]/.test(beforeChar) && !/[a-zA-Z]/.test(afterChar)) {
-                foundPosInLine.push({ pos: pos, index: idx });
-            }
+        // 2. 如果整行完全沒有英文字母，但有中文，直接判定為純定義延伸
+        if (!/[a-zA-Z]/.test(line) && /[\u4e00-\u9fff]/.test(line)) {
+            return [{ type: 'append_to_last', def: line }];
         }
-    });
 
-    // 依出現在行中的先後順序排序
-    foundPosInLine.sort((a, b) => a.index - b.index);
+        const tokens = [];
+        let lastIndex = 0;
+        let match;
+        
+        // 核心 Regex：抓取 【英文與符號區】 ＋ 【緊鄰的中文字與結尾標點區】
+        const pairRegex = /([a-zA-Z0-9\s.\-\/()（）\[\]_+=]+)([\u4e00-\u9fff][^a-zA-Z0-9_]*)/g;
 
-    let word = "";
-    let def = "";
-    let finalPosList = [];
-
-    // 3. 根據是否偵測到詞性，切換不同的解析大腦
-    if (foundPosInLine.length > 0) {
-        // 標準化所有找到的詞性
-        foundPosInLine.forEach(item => {
-            let p = item.pos;
-            if (p === 'a.') p = 'adj.';
-            if (p === 'ad.') p = 'adv.';
-            if (!finalPosList.includes(p)) finalPosList.push(p);
-        });
-
-        const firstPos = foundPosInLine[0];
-        const lastPos = foundPosInLine[foundPosInLine.length - 1];
-
-        if (firstPos.index === 0) {
-            // 【型態 A】詞性在最前面：例如 "vt., vi. fly 飛"
-            let remain = line.slice(lastPos.index + lastPos.pos.length).trim();
-            const matchChinese = remain.match(/([\u4e00-\u9fff].*)$/);
-            if (matchChinese) {
-                def = matchChinese[1];
-                word = remain.slice(0, remain.indexOf(def)).trim();
-            } else {
-                word = remain;
+        // 3. 開始進行全域掃描切片
+        while ((match = pairRegex.exec(line)) !== null) {
+            // 檢查兩個匹配之間，有沒有被漏掉的「純中文」（通常是上一個單字殘留下來的尾巴）
+            if (match.index > lastIndex) {
+                let skippedText = line.slice(lastIndex, match.index).trim();
+                if (/[\u4e00-\u9fff]/.test(skippedText)) {
+                    tokens.push({ type: 'append_to_last', def: skippedText });
+                }
             }
-        } else {
-            // 【型態 B】詞性在中間或後面：例如 "apple n. 蘋果"
-            let leftPart = line.slice(0, firstPos.index).trim();
+
+            let eng = match[1].trim();
+            let chi = match[2].trim();
+
+            // 4. 在獨立的英文切片區內，精準抓取詞性 (POS)
+            const posList = ['prep.', 'conj.', 'pron.', 'aux.', 'adj.', 'adv.', 'num.', 'int.', 'art.', 'vi.', 'vt.', 'n.', 'v.', 'a.', 'ad.'];
+            let foundPos = [];
             
-            // 判斷左邊是否為純英文區（允許標點與空格）
-            if (/^[a-zA-Z\s\-'\.\/,1-9\(\)\[\]\uff08\uff09]+$/.test(leftPart)) {
-                word = leftPart;
-                let rightPart = line.slice(firstPos.index).trim();
-                foundPosInLine.forEach(item => {
-                    rightPart = rightPart.replace(item.pos, ' ');
+            posList.forEach(pos => {
+                let idx = -1;
+                while ((idx = eng.indexOf(pos, idx + 1)) !== -1) {
+                    const before = idx > 0 ? eng[idx - 1] : ' ';
+                    const after = idx + pos.length < eng.length ? eng[idx + pos.length] : ' ';
+                    
+                    // 嚴格邊界防禦：前後不能是常規字母，防 Jun. 或 general 誤判
+                    if (!/[a-zA-Z]/.test(before) && !/[a-zA-Z]/.test(after)) {
+                        foundPos.push({ pos: pos, index: idx });
+                    }
+                }
+            });
+            foundPos.sort((a, b) => a.index - b.index);
+
+            let word = "";
+            let posStr = "u.";
+
+            if (foundPos.length > 0) {
+                let standardPosArr = foundPos.map(item => {
+                    let p = item.pos;
+                    if (p === 'a.') return 'adj.';
+                    if (p === 'ad.') return 'adv.';
+                    return p;
                 });
-                def = rightPart;
+                standardPosArr = [...new Set(standardPosArr)]; // 去重
+                posStr = standardPosArr.join(', ');
+
+                // 根據詞性位置切出真正的單字
+                if (foundPos[0].index <= 2) {
+                    // 詞性在最前面，例如 "vt. fly"
+                    word = eng.slice(foundPos[foundPos.length - 1].index + foundPos[foundPos.length - 1].pos.length).trim();
+                } else {
+                    // 詞性在中間或後面，例如 "apple n."
+                    word = eng.slice(0, foundPos[0].index).trim();
+                }
             } else {
-                // 詞性後置 (abandon 拋棄 v.)
-                const matchEnglish = leftPart.match(/^([a-zA-Z\s\-'\.\/,1-9\(\)\[\]\uff08\uff09]+)/);
-                if (matchEnglish) {
-                    word = matchEnglish[1];
-                    def = leftPart.slice(word.length);
+                word = eng; // 無詞性
+            }
+
+            // 5. 收尾清理與格式化
+            word = word.replace(/[()（）\[\]\/,;\s\.\-]+$/, '').replace(/^[()（）\[\]\/,;\s\.\-]+/, '').trim();
+            word = word.replace(/([^a-zA-Z0-9])\d+$/, '$1').replace(/[1-9]$/, '').trim(); // 去除 apple1 類的尾端數字
+            chi = chi.replace(/^[\s\/,\uff0c\u3001;；:：)]+|[\s\/,\uff0c\u3001;；:：(]+$/g, '').trim();
+
+            // 智慧判定：如果切出來發現沒有英文單字，只有詞性和中文，代表它是上個單字的「多重詞性延伸換行」
+            if (!word && posStr !== 'u.') {
+                tokens.push({ type: 'pos_continuation', pos: posStr, def: chi });
+            } else if (word) {
+                tokens.push({ type: 'word', word: word, pos: posStr, def: chi });
+            }
+
+            lastIndex = pairRegex.lastIndex;
+        }
+
+        // 6. 處理整行結尾可能留下的殘渣
+        if (lastIndex < line.length) {
+            let leftover = line.slice(lastIndex).trim();
+            if (leftover) {
+                if (!/[a-zA-Z]/.test(leftover) && /[\u4e00-\u9fff]/.test(leftover)) {
+                    tokens.push({ type: 'append_to_last', def: leftover });
+                } else if (/[a-zA-Z]/.test(leftover)) {
+                    tokens.push({ type: 'word', word: leftover.replace(/[1-9]$/, ''), pos: 'u.', def: '' });
                 }
             }
         }
-    } else {
-        // 【型態 C】完全沒有詞性標記：例如 "pencil 鉛筆"
-        const matchSplit = line.match(/^([a-zA-Z\s\-'\.\/,1-9\(\)\[\]\uff08\uff09]+)([\u4e00-\u9fff].*)$/);
-        if (matchSplit) {
-            word = matchSplit[1];
-            def = matchSplit[2];
-        } else {
-            word = line;
-        }
+
+        return tokens;
+
+    } catch (err) {
+        console.warn(`⚠️ [解析忽略] 嚴重奇葩行已自動跳過 -> "${line}". 原因: ${err.message}`);
+        return [];
     }
-
-    // 4. 【後置終極雜質剝離】收尾冷酷清理
-    // 清理單字首尾所有可能殘留的各式括號與標點符號
-    word = word.replace(/[()（）\[\]\/,;\s\.\-]+$/, '').replace(/^[()（）\[\]\/,;\s\.\-]+/, '').trim();
-    // 拔除大考中心的重複序號（如 apple1 -> apple）
-    word = word.replace(/([^a-zA-Z0-9])\d+$/, '$1').replace(/[1-9]$/, '').trim();
-    
-    // 清理中文首尾雜質
-    def = def.replace(/^[\s\/,\uff0c\u3001;；:：)]+|[\s\/,\uff0c\u3001;；:：(]+$/g, '').trim();
-
-    if (!word) return [];
-
-    const finalPosStr = finalPosList.length > 0 ? finalPosList.join(', ') : 'u.';
-
-    return [{
-        word: word,
-        pos: finalPosStr,
-        def: def
-    }];
 }
-
 
 /**
  * 主程式：讀取根目錄 Level1~6.txt，進行自動清洗與智慧合併
@@ -174,22 +170,17 @@ function main() {
 
         let structuredWords = [];
         let currentWord = null;
-        const posList = ['prep.', 'conj.', 'pron.', 'aux.', 'adj.', 'adv.', 'num.', 'int.', 'art.', 'vi.', 'vt.', 'n.', 'v.', 'a.', 'ad.'];
 
-        // 每一個 Level 獨立宣告一個 Map，徹底杜絕跨關卡 Reference 被 clear() 刪除的 Bug
+        // 每一個 Level 獨立宣告一個 Map，徹底杜絕跨關卡 Reference 記憶體遺失的 Bug
         const currentLevelMap = new Map();
 
         // 3. 解析每一行
-for (let i = 0; i < mergedLines.length; i++) {
+        for (let i = 0; i < mergedLines.length; i++) {
             const line = mergedLines[i].trim();
             
-            // =========================================================================
-            // 🛑 【新增：標題與雜質過濾器】 🛑
-            // =========================================================================
-            // 1. 過濾掉純數字（頁碼）
-            if (/^\d+$/.test(line)) continue;
+            // 🛑 【標題與頁碼雜質過濾器】
+            if (/^\d+$/.test(line)) continue; // 過濾純數字頁碼
             
-            // 2. 過濾掉大考中心的標題、級數宣告、頁面標籤
             const lowerLine = line.toLowerCase();
             if (
                 lowerLine.includes('level') || 
@@ -198,91 +189,63 @@ for (let i = 0; i < mergedLines.length; i++) {
                 lowerLine.includes('單字') || 
                 lowerLine.includes('字表') || 
                 lowerLine.includes('版權所有') ||
-                line.length <= 1 // 過濾掉單個莫名其妙的英文字母或雜訊
+                line.length <= 1 // 過濾單個英文字母雜訊
             ) {
-                console.log(`🗑️ 已自動過濾標題或雜訊行 -> "${line}"`);
                 continue;
-                }
+            }
+
+            // 呼叫萬能斷詞器
+            const parsedTokens = parseCleanedLine(line);
             
-            try {
-                let isContinuation = false;
-                let posFound = null;
-
-                // 檢查是否為特殊換行後獨立出現的詞性標頭
-                for (const pos of posList) {
-                    const regex = new RegExp(`^${pos.replace('.', '\\.')}(?:[^a-zA-Z]|$)`);
-                    const match = line.match(regex);
-                    if (match) {
-                        posFound = pos;
-                        isContinuation = true;
-                        break;
+            // 根據 Token 類型各司其職
+            parsedTokens.forEach(token => {
+                if (token.type === 'append_to_last') {
+                    // 【任務 A】純中文殘留：黏貼到上一個單字的中文後面
+                    if (currentWord) {
+                        currentWord.def = currentWord.def ? `${currentWord.def} ； ${token.def}` : token.def;
                     }
-                }
-
-                if (!isContinuation && currentWord) {
-                    const hasEnglishLetters = /[a-zA-Z]{2,}/.test(line);
-                    if (!hasEnglishLetters) {
-                        isContinuation = true; // 純中文，當作上一個單字的定義延伸
-                    }
-                }
-
-                // 如果判定為上一行的延伸
-                if (isContinuation && currentWord) {
-                    if (posFound) {
-                        const newDef = line.slice(posFound.length).trim();
-                        let standardPos = posFound;
-                        if (standardPos === 'a.') standardPos = 'adj.';
-                        else if (standardPos === 'ad.') standardPos = 'adv.';
-
-                        if (!currentWord.pos.includes(standardPos)) {
-                            currentWord.pos = currentWord.pos ? `${currentWord.pos}, ${standardPos}` : standardPos;
+                } else if (token.type === 'pos_continuation') {
+                    // 【任務 B】換行多重詞性延伸：幫上一個單字擴充詞性與定義
+                    if (currentWord) {
+                        if (!currentWord.pos.includes(token.pos)) {
+                            currentWord.pos = `${currentWord.pos}, ${token.pos}`;
                         }
-                        currentWord.def = currentWord.def ? `${currentWord.def} ； (${standardPos}) ${newDef}` : `(${standardPos}) ${newDef}`;
-                    } else {
-                        currentWord.def = currentWord.def ? `${currentWord.def} ； ${line}` : line;
+                        currentWord.def = `${currentWord.def} ； (${token.pos}) ${token.def}`;
                     }
-                    continue;
-                }
-
-                // 正常解析單行
-                const parsedList = parseCleanedLine(line);
-                if (parsedList.length > 0) {
-                    parsedList.forEach(w => {
-                        structuredWords.push(w);
+                } else if (token.type === 'word') {
+                    // 【任務 C】標準新單字：寫入結構陣列
+                    structuredWords.push({
+                        word: token.word,
+                        pos: token.pos,
+                        def: token.def
                     });
-                    // 更新當前的指標單字
+                    // 更新當前指標，讓後續的延伸內容可以正確黏附
                     currentWord = structuredWords[structuredWords.length - 1];
                 }
-            } catch (lineError) {
-                console.warn(`⚠️ 警告: 解析此行時發生錯誤並跳過 -> "${line}":`, lineError.message);
-            }
+            });
         }
 
         // 4. 在關卡內進行重複單字合併 (例如同個 Level 裡重複出現的單字)
         structuredWords.forEach(item => {
             const lowerWord = item.word.toLowerCase();
+            let prefix = item.pos !== 'u.' ? `(${item.pos}) ` : '';
             
             if (currentLevelMap.has(lowerWord)) {
                 let existing = currentLevelMap.get(lowerWord);
                 if (!existing.pos.includes(item.pos)) {
                     existing.pos = `${existing.pos}, ${item.pos}`;
                 }
-                // 避免重複黏貼一樣的詞性標籤
-                if (!existing.def.includes(`(${item.pos})`)) {
-                    existing.def = `${existing.def} ； (${item.pos}) ${item.def}`;
-                } else {
-                    existing.def = `${existing.def} ； ${item.def}`;
-                }
+                existing.def = `${existing.def} ； ${prefix}${item.def}`;
             } else {
                 currentLevelMap.set(lowerWord, {
                     word: item.word,
                     pos: item.pos,
-                    def: `(${item.pos}) ${item.def}`
+                    def: `${prefix}${item.def}`
                 });
             }
         });
 
-        // 轉成陣列存入對應關卡
+        // 轉成陣列存入對應關卡（直接賦予前端大寫 Level 屬性）
         allLevels[`Level${level}`] = Array.from(currentLevelMap.values());
         console.log(`✅ ${fileName} 解析完畢，共計 ${allLevels[`Level${level}`].length} 個不重複單字。`);
     }
