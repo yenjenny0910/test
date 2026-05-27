@@ -93,6 +93,18 @@ function parseCleanedLine(line) {
             } else {
                 // 如果左邊包含中文，代表詞性後置了 (abandon 拋棄 v.)
                 const matchEnglish = leftPart.match(/^([a-zA-Z\s\-'\.\/,1-9\(\)]+)/);
+                if (matchEnglish) {
+                    word = matchEnglish[1];
+                    def = leftPart.slice(word.length);
+                }
+            }
+        }
+    } else {
+        // 【型態 C】完全沒有詞性標記：例如 "pencil 鉛筆"
+        // 直接用第一個中文字元把英文和中文切開
+        const matchSplit = line.match(/^([a-zA-Z\s\-'\.\/,1-9\(\)]+)([\u4e00-\u9fff].*)$/);
+        if (matchSplit) {
+            word = matchSplit[1];
 /**
  * 終極解析單行單字：完美防禦 Jun. 等月份縮寫誤判、強效剝離全半形殘留括號
  */
