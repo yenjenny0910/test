@@ -18,68 +18,83 @@ function cleanLine(line) {
 }
 
 /**
- * 解析單行單字：支援多重詞性、片語、中英文分流
+ * 解析單行單字：完美解決「無詞性」、「多詞性前置」、「詞性夾在中間」等大考中心排版混亂問題
  */
 function parseCleanedLine(line) {
     line = line.trim();
     if (!line) return [];
 
-    // 常見詞性清單（依長度排序，避免短詞性提前截斷長詞性）
+    // 支援的詞性清單
     const posList = ['prep.', 'conj.', 'pron.', 'aux.', 'adj.', 'adv.', 'num.', 'int.', 'art.', 'vi.', 'vt.', 'n.', 'v.', 'a.', 'ad.'];
-    
-    let posMatches = [];
+
+    // 1. 第一步：利用中文字元（\u4e00-\u9fff）作為分水嶺，把「英文/詞性區」與「中文定義區」切開
+    const splitMatch = line.match(/^([a-zA-Z\s\-'\.\/,1-9]+)([\u4e00-\u9fff].*)$/);
+    if (!splitMatch) return []; // 格式完全不符則跳過
+
+    let englishPart = splitMatch[1].trim();
+    let defPart = splitMatch[2].trim();
+
+    // 2. 第二步：從 englishPart 裡面，把所有藏在裡面的詞性（Pos）抓出來
+    let foundPosInLine = [];
     posList.forEach(pos => {
         let idx = -1;
-        while ((idx = line.indexOf(pos, idx + 1)) !== -1) {
-            const before = idx === 0 ? ' ' : line[idx - 1];
-            const after = idx + pos.length >= line.length ? ' ' : line[idx + pos.length];
-            // 確保詞性前後是邊界或中文
-            if (/[\s\/]/.test(before) && (/[\s\u4e00-\u9fff]/.test(after) || after === ' ')) {
-                posMatches.push({ pos: pos, index: idx });
+        while ((idx = englishPart.indexOf(pos, idx + 1)) !== -1) {
+            // 確保不是其他單字的一部分（例如 general 裡面的 n.）
+            const before = idx === 0 ? ' ' : englishPart[idx - 1];
+            const after = idx + pos.length >= englishPart.length ? ' ' : englishPart[idx + pos.length];
+            if (/[\s\/,;]/.test(before) && /[\s\/,;]/.test(after)) {
+                foundPosInLine.push({ pos: pos, index: idx });
             }
         }
     });
 
-    // 依據出現在行中的先後順序排序
-    posMatches.sort((a, b) => a.index - b.index);
+    // 依出現位置排序
+    foundPosInLine.sort((a, b) => a.index - b.index);
 
-    let results = [];
+    let word = "";
+    let finalPosList = [];
 
-    if (posMatches.length > 0) {
-        let rawWord = line.slice(0, posMatches[0].index).trim();
-        // 精準拔除單字尾端純粹用來識別重複的數字（例如 "pop1" -> "pop"），避免誤殺 "3D"
-        let word = rawWord.replace(/([^a-zA-Z0-9])\d+$/, '$1').replace(/[1-9]$/, '').trim();
-
-        for (let i = 0; i < posMatches.length; i++) {
-            let currentPos = posMatches[i].pos;
-            let startDef = posMatches[i].index + currentPos.length;
-            let endDef = (i + 1 < posMatches.length) ? posMatches[i + 1].index : line.length;
-            let def = line.slice(startDef, endDef).trim();
-            
-            // 移除中文定義首尾的多餘斜線或逗號
-            def = def.replace(/^[\s\/,\uff0c\u3001]+|[\s\/,\uff0c\u3001]+$/g, '').trim();
-
-            // 詞性標準化
-            let standardPos = currentPos;
-            if (standardPos === 'a.') standardPos = 'adj.';
-            else if (standardPos === 'ad.') standardPos = 'adv.';
-
-            if (word && def) {
-                results.push({ word: word, pos: standardPos, def: def });
-            }
+    // 3. 第三步：根據「詞性出現的位置」來通靈真正的單字是誰
+    if (foundPosInLine.length > 0) {
+        // 情況 A：詞性在中間（如 "apple n. 蘋果"），第一個詞性左邊的就是單字
+        if (foundPosInLine[0].index > 1) {
+            word = englishPart.slice(0, foundPosInLine[0].index).trim();
+        } 
+        // 情況 B：詞性在最前面（如 "vt., vi. drop"），最後一個詞性右邊的才是單字
+        else {
+            const lastPosObj = foundPosInLine[foundPosInLine.length - 1];
+            word = englishPart.slice(lastPosObj.index + lastPosObj.pos.length).trim();
         }
+
+        // 收集這行出現的所有詞性，並做標準化
+        foundPosInLine.forEach(item => {
+            let p = item.pos;
+            if (p === 'a.') p = 'adj.';
+            if (p === 'ad.') p = 'adv.';
+            if (!finalPosList.includes(p)) finalPosList.push(p);
+        });
     } else {
-        // 處理沒有詞性標記的特殊行（純英文 + 純中文）
-        const match = line.match(/^([a-zA-Z\s\-'\.\d]+)([\u4e00-\u9fff].*)$/);
-        if (match) {
-            let rawWord = match[1].trim();
-            let word = rawWord.replace(/[1-9]$/, '').trim();
-            let def = match[2].trim();
-            results.push({ word: word, pos: 'u.', def: def });
-        }
+        // 情況 C：完全沒有詞性標記（如 "apple 蘋果"）
+        word = englishPart;
     }
 
-    return results;
+    // 4. 清理單字尾端的雜質（如大考中心的重複數字、多餘斜線逗號）
+    word = word.replace(/[\/,;\s]+$/, '').replace(/^[\/,;\s]+/, ''); // 拔除首尾標點
+    word = word.replace(/([^a-zA-Z0-9])\d+$/, '$1').replace(/[1-9]$/, '').trim(); // 拔除重複序號
+
+    // 清理中文首尾雜質
+    defPart = defPart.replace(/^[\s\/,\uff0c\u3001]+|[\s\/,\uff0c\u3001]+$/g, '').trim();
+
+    if (!word) return [];
+
+    // 5. 格式化輸出：如果有多個詞性，我們把它們打包在一起回傳
+    const finalPosStr = finalPosList.length > 0 ? finalPosList.join(', ') : 'u.';
+    
+    return [{
+        word: word,
+        pos: finalPosStr,
+        def: defPart
+    }];
 }
 
 /**
