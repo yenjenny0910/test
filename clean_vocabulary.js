@@ -7,7 +7,7 @@ const path = require('path');
 function cleanLine(line) {
     line = line.trim();
     if (!line) return "";
-    // 移除中括號 [ ... ] 及其內容
+    // 移除中括號 [ ... ] 及其內容 (通常是音標)
     line = line.replace(/\[[^\]]*\]/g, ' ');
     // 移除前後的斜線與多餘空格
     line = line.replace(/[\s\/]+$/, '');
@@ -33,20 +33,22 @@ function parseCleanedLine(line) {
         while ((idx = line.indexOf(pos, idx + 1)) !== -1) {
             const before = idx === 0 ? ' ' : line[idx - 1];
             const after = idx + pos.length >= line.length ? ' ' : line[idx + pos.length];
-            if (/[\s\/]/.test(before) && /[\s\u4e00-\u9fff]/.test(after)) {
+            // 確保詞性前後是邊界或中文
+            if (/[\s\/]/.test(before) && (/[\s\u4e00-\u9fff]/.test(after) || after === ' ')) {
                 posMatches.push({ pos: pos, index: idx });
             }
         }
     });
 
+    // 依據出現在行中的先後順序排序
     posMatches.sort((a, b) => a.index - b.index);
 
     let results = [];
 
     if (posMatches.length > 0) {
         let rawWord = line.slice(0, posMatches[0].index).trim();
-        // 拔除單字尾端純粹用來識別重複的數字（例如 "pop1" -> "pop"）
-        let word = rawWord.replace(/([a-zA-Z\s\-'\.\/]+)\d+$/, '$1').trim();
+        // 精準拔除單字尾端純粹用來識別重複的數字（例如 "pop1" -> "pop"），避免誤殺 "3D"
+        let word = rawWord.replace(/([^a-zA-Z0-9])\d+$/, '$1').replace(/[1-9]$/, '').trim();
 
         for (let i = 0; i < posMatches.length; i++) {
             let currentPos = posMatches[i].pos;
@@ -67,11 +69,11 @@ function parseCleanedLine(line) {
             }
         }
     } else {
-        // 處理沒有詞性標記的特殊行
+        // 處理沒有詞性標記的特殊行（純英文 + 純中文）
         const match = line.match(/^([a-zA-Z\s\-'\.\d]+)([\u4e00-\u9fff].*)$/);
         if (match) {
             let rawWord = match[1].trim();
-            let word = rawWord.replace(/([a-zA-Z\s\-'\.\/]+)\d+$/, '$1').trim();
+            let word = rawWord.replace(/[1-9]$/, '').trim();
             let def = match[2].trim();
             results.push({ word: word, pos: 'u.', def: def });
         }
@@ -86,7 +88,6 @@ function parseCleanedLine(line) {
 function main() {
     const baseDir = __dirname; 
     const allLevels = {};
-    const globalMergedMap = new Map();
 
     console.log("🚀 開始執行大考 7000 單字自動清洗中心...");
 
@@ -103,12 +104,14 @@ function main() {
         const content = fs.readFileSync(filePath, 'utf8');
         const lines = content.split(/\r?\n/);
 
+        // 1. 基礎清洗
         let cleanedLines = lines.map(line => cleanLine(line)).filter(line => line.length > 0);
         let mergedLines = [];
         
+        // 2. 智慧型跨行黏合（如果下一行沒有中文，代表它是上一行未完的英文片語或例句）
         for (let i = 0; i < cleanedLines.length; i++) {
             let currentLine = cleanedLines[i];
-            while (i < cleanedLines.length - 1 && !/[\u4e00-\u9fff]/.test(currentLine)) {
+            while (i < cleanedLines.length - 1 && !/[\u4e00-\u9fff]/.test(cleanedLines[i + 1])) {
                 i++;
                 currentLine += " " + cleanedLines[i];
             }
@@ -119,6 +122,10 @@ function main() {
         let currentWord = null;
         const posList = ['prep.', 'conj.', 'pron.', 'aux.', 'adj.', 'adv.', 'num.', 'int.', 'art.', 'vi.', 'vt.', 'n.', 'v.', 'a.', 'ad.'];
 
+        // 每一個 Level 獨立宣告一個 Map，徹底杜絕跨關卡 Reference 被 clear() 刪除的 Bug
+        const currentLevelMap = new Map();
+
+        // 3. 解析每一行
         for (let i = 0; i < mergedLines.length; i++) {
             const line = mergedLines[i];
             
@@ -126,6 +133,7 @@ function main() {
                 let isContinuation = false;
                 let posFound = null;
 
+                // 檢查是否為特殊換行後獨立出現的詞性標頭
                 for (const pos of posList) {
                     const regex = new RegExp(`^${pos.replace('.', '\\.')}(?:[^a-zA-Z]|$)`);
                     const match = line.match(regex);
@@ -139,10 +147,11 @@ function main() {
                 if (!isContinuation && currentWord) {
                     const hasEnglishLetters = /[a-zA-Z]{2,}/.test(line);
                     if (!hasEnglishLetters) {
-                        isContinuation = true;
+                        isContinuation = true; // 純中文，當作上一個單字的定義延伸
                     }
                 }
 
+                // 如果判定為上一行的延伸
                 if (isContinuation && currentWord) {
                     if (posFound) {
                         const newDef = line.slice(posFound.length).trim();
@@ -160,11 +169,13 @@ function main() {
                     continue;
                 }
 
+                // 正常解析單行
                 const parsedList = parseCleanedLine(line);
                 if (parsedList.length > 0) {
                     parsedList.forEach(w => {
                         structuredWords.push(w);
                     });
+                    // 更新當前的指標單字
                     currentWord = structuredWords[structuredWords.length - 1];
                 }
             } catch (lineError) {
@@ -172,43 +183,38 @@ function main() {
             }
         }
 
+        // 4. 在關卡內進行重複單字合併 (例如同個 Level 裡重複出現的單字)
         structuredWords.forEach(item => {
             const lowerWord = item.word.toLowerCase();
             
-            if (globalMergedMap.has(lowerWord)) {
-                let existing = globalMergedMap.get(lowerWord);
+            if (currentLevelMap.has(lowerWord)) {
+                let existing = currentLevelMap.get(lowerWord);
                 if (!existing.pos.includes(item.pos)) {
                     existing.pos = `${existing.pos}, ${item.pos}`;
                 }
-                existing.def = `${existing.def} ； (${item.pos}) ${item.def}`;
+                // 避免重複黏貼一樣的詞性標籤
+                if (!existing.def.includes(`(${item.pos})`)) {
+                    existing.def = `${existing.def} ； (${item.pos}) ${item.def}`;
+                } else {
+                    existing.def = `${existing.def} ； ${item.def}`;
+                }
             } else {
-                let formattedItem = {
+                currentLevelMap.set(lowerWord, {
                     word: item.word,
                     pos: item.pos,
                     def: `(${item.pos}) ${item.def}`
-                };
-                globalMergedMap.set(lowerWord, formattedItem);
+                });
             }
         });
 
-        // 暫存至暫存區
-        allLevels[`level${level}`] = Array.from(globalMergedMap.values());
-        globalMergedMap.clear();
-        console.log(`✅ ${fileName} 解析完畢，共計 ${allLevels[`level${level}`].length} 個不重複單字。`);
+        // 轉成陣列存入對應關卡
+        allLevels[`Level${level}`] = Array.from(currentLevelMap.values());
+        console.log(`✅ ${fileName} 解析完畢，共計 ${allLevels[`Level${level}`].length} 個不重複單字。`);
     }
 
-    // =========================================================================
-    // 🌟 ✨ ✨ 【前端對接優化區】把格式塑造成前端大寫 CEEC_WORDS 的形狀 ✨ ✨ ✨
-    // =========================================================================
-    const formattedLevels = {};
-    for (let i = 1; i <= 6; i++) {
-        // 將原本小寫的 level1 轉換為大寫開頭的 Level1，完美迎合前端需求
-        formattedLevels[`Level${i}`] = allLevels[`level${i}`] || [];
-    }
-
-    // 輸出內容：直接宣告大寫的 CEEC_WORDS，並附帶一個小寫的 ceec_words 做雙向防呆
+    // 5. 輸出成前端大寫變數相容格式
     const outputContent = `// 🤖 本檔案由雲端 Docker 自動清洗生成，請勿手動修改
-const CEEC_WORDS = ${JSON.stringify(formattedLevels, null, 2)};
+const CEEC_WORDS = ${JSON.stringify(allLevels, null, 2)};
 const ceec_words = CEEC_WORDS; 
 
 if (typeof module !== 'undefined' && module.exports) {
