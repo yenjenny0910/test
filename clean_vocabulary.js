@@ -93,6 +93,87 @@ function parseCleanedLine(line) {
             } else {
                 // 如果左邊包含中文，代表詞性後置了 (abandon 拋棄 v.)
                 const matchEnglish = leftPart.match(/^([a-zA-Z\s\-'\.\/,1-9\(\)]+)/);
+/**
+ * 終極解析單行單字：完美防禦 Jun. 等月份縮寫誤判、強效剝離全半形殘留括號
+ */
+function parseCleanedLine(line) {
+    line = line.trim();
+    if (!line) return [];
+
+    // 1. 【新增：前置括號大掃除】直接把英文部分的補充括號（不論全半形、內含什麼字）先清掉
+    // 例如： "absorb (vt.) 吸收" -> "absorb 吸收"
+    // 例如： "apple [C] 蘋果" -> "apple 蘋果"
+    line = line.replace(/[\(\[\uff08][a-zA-Z\s\.\,\/\uff0c]*[\)\]\uff09]/g, ' ');
+    // 再清一次可能連續產生的空格
+    line = line.replace(/\s+/g, ' ').trim();
+
+    // 嚴格定義詞性關鍵字（依長度排序）
+    const posList = ['prep.', 'conj.', 'pron.', 'aux.', 'adj.', 'adv.', 'num.', 'int.', 'art.', 'vi.', 'vt.', 'n.', 'v.', 'a.', 'ad.'];
+    
+    let foundPosInLine = [];
+    
+    // 2. 全域搜尋行內所有符合的詞性標籤
+    posList.forEach(pos => {
+        let idx = -1;
+        while ((idx = line.indexOf(pos, idx + 1)) !== -1) {
+            const beforeChar = idx > 0 ? line[idx - 1] : ' ';
+            const afterChar = idx + pos.length < line.length ? line[idx + pos.length] : ' ';
+            
+            // 🛑 【重大修正：嚴格詞性邊界】
+            // 詞性的前面不能是小寫英文字母（防 general 裡的 n.），
+            // 且「前面絕對不能是大寫字母」（防 Jun. 裡面的 un. 被誤判為詞性！）
+            // 詞性後面必須是空格、標點符號或中文
+            if (!/[a-zA-Z]/.test(beforeChar) && !/[a-zA-Z]/.test(afterChar)) {
+                foundPosInLine.push({ pos: pos, index: idx });
+            }
+        }
+    });
+
+    // 依出現在行中的先後順序排序
+    foundPosInLine.sort((a, b) => a.index - b.index);
+
+    let word = "";
+    let def = "";
+    let finalPosList = [];
+
+    // 3. 根據是否偵測到詞性，切換不同的解析大腦
+    if (foundPosInLine.length > 0) {
+        // 標準化所有找到的詞性
+        foundPosInLine.forEach(item => {
+            let p = item.pos;
+            if (p === 'a.') p = 'adj.';
+            if (p === 'ad.') p = 'adv.';
+            if (!finalPosList.includes(p)) finalPosList.push(p);
+        });
+
+        const firstPos = foundPosInLine[0];
+        const lastPos = foundPosInLine[foundPosInLine.length - 1];
+
+        if (firstPos.index === 0) {
+            // 【型態 A】詞性在最前面：例如 "vt., vi. fly 飛"
+            let remain = line.slice(lastPos.index + lastPos.pos.length).trim();
+            const matchChinese = remain.match(/([\u4e00-\u9fff].*)$/);
+            if (matchChinese) {
+                def = matchChinese[1];
+                word = remain.slice(0, remain.indexOf(def)).trim();
+            } else {
+                word = remain;
+            }
+        } else {
+            // 【型態 B】詞性在中間或後面：例如 "apple n. 蘋果"
+            let leftPart = line.slice(0, firstPos.index).trim();
+            
+            // 判斷左邊是否為純英文區（允許標點與空格）
+            if (/^[a-zA-Z\s\-'\.\/,1-9\(\)\[\]\uff08\uff09]+$/.test(leftPart)) {
+                word = leftPart;
+                let rightPart = line.slice(firstPos.index).trim();
+                foundPosInLine.forEach(item => {
+                    rightPart = rightPart.replace(item.pos, ' ');
+                });
+                def = rightPart;
+            } else {
+                // 詞性後置 (abandon 拋棄 v.)
+                const matchEnglish = leftPart.match(/^([a-zA-Z\s\-'\.\/,1-9\(\)\[\]\uff08\uff09]+)/);
                 if (matchEnglish) {
                     word = matchEnglish[1];
                     def = leftPart.slice(word.length);
@@ -101,22 +182,23 @@ function parseCleanedLine(line) {
         }
     } else {
         // 【型態 C】完全沒有詞性標記：例如 "pencil 鉛筆"
-        // 直接用第一個中文字元把英文和中文切開
-        const matchSplit = line.match(/^([a-zA-Z\s\-'\.\/,1-9\(\)]+)([\u4e00-\u9fff].*)$/);
+        const matchSplit = line.match(/^([a-zA-Z\s\-'\.\/,1-9\(\)\[\]\uff08\uff09]+)([\u4e00-\u9fff].*)$/);
         if (matchSplit) {
             word = matchSplit[1];
             def = matchSplit[2];
         } else {
-            // 防呆：如果連中文都沒有，整行當作單字
             word = line;
         }
     }
 
-    // 3. 終極前後雜質清理（清洗括號、標點符號、大考序號）
-    word = word.replace(/[()（）\/,;\s]+$/, '').replace(/^[()（）\/,;\s]+/, '').trim();
+    // 4. 【後置終極雜質剝離】收尾冷酷清理
+    // 清理單字首尾所有可能殘留的各式括號與標點符號
+    word = word.replace(/[()（）\[\]\/,;\s\.\-]+$/, '').replace(/^[()（）\[\]\/,;\s\.\-]+/, '').trim();
+    // 拔除大考中心的重複序號（如 apple1 -> apple）
     word = word.replace(/([^a-zA-Z0-9])\d+$/, '$1').replace(/[1-9]$/, '').trim();
     
-    def = def.replace(/^[\s\/,\uff0c\u3001;；:]+|[\s\/,\uff0c\u3001;；:]+$/g, '').trim();
+    // 清理中文首尾雜質
+    def = def.replace(/^[\s\/,\uff0c\u3001;；:：)]+|[\s\/,\uff0c\u3001;；:：(]+$/g, '').trim();
 
     if (!word) return [];
 
